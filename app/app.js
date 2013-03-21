@@ -1,7 +1,7 @@
 var SourceMap = require("source-map");
 var UglifyJS = require("./uglify-js");
 
-var exampleKinds = ["minimize", "beautify", "coffee", "simple-coffee", "simple-coffee-redux", "typescript"];
+var exampleKinds = ["minimize", "beautify", "coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
 var LINESTYLES = 5;
 
 $(function() {
@@ -23,6 +23,17 @@ $(function() {
 
 		var generated = $(".generated").text("");
 		var original = $(".original").text("");
+		var mappings = $(".mappings").text("1: ");
+
+		if(exampleJs.substr(0, 1) == "\n") {
+			generated.append($("<button>")
+				.addClass("btn btn-danger")
+				.text("remove first line")
+				.attr("title", "What would happen if this line has be removed?")
+				.click(function() {
+					loadExample(example, exampleJs.substr(1), exampleMap);
+				}));
+		}
 
 		var nodes = SourceMap.SourceNode.fromStringWithSourceMap(exampleJs, map).children;
 		nodes.forEach(function(item) {
@@ -41,6 +52,17 @@ $(function() {
 			}
 		});
 		var exampleLines = example.split("\n");
+		var lastGenLine = 1;
+		map.eachMapping(function(mapping) {
+			if(mapping.source !== "example") return;
+			while(lastGenLine < mapping.generatedLine) {
+				mappings.append($("<br>"));
+				lastGenLine++;
+				mappings.append($("<span>").text(lastGenLine + ": "));
+			}
+			mappings.append($("<span>").text(mapping.generatedColumn + "->" + mapping.originalLine + ":" + mapping.originalColumn));
+			mappings.append($("<span>").text("  "));
+		});
 		var line = 1, column = 0;
 		var lastMapping = null;
 		map.eachMapping(function(mapping) {
@@ -116,7 +138,7 @@ $(function() {
 			var column = $(this).data("column");
 			$(".generated-item-" + line + "-" + column).addClass("selected");
 		});
-		
+
 		generated.append($("<br>"));
 		generated.append($("<br>"));
 		generated.append($("<button>")
@@ -133,7 +155,7 @@ $(function() {
 				minmap = SourceMap.SourceMapGenerator.fromSourceMap(minmap);
 				minmap.applySourceMap(map, "?");
 				minmap = minmap.toJSON();
-				
+
 				loadExample(example, result.code, minmap);
 			}));
 	}

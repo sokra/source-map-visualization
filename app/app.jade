@@ -1,0 +1,13 @@
+.container
+	.row
+		.span12
+			h1 source-map-visualization
+			p
+				each kind in kinds
+					button.btn.example(data-example=kind)= kind
+					= " "
+	.row
+		.span6
+			pre: code.original
+		.span6
+			pre: code.generated

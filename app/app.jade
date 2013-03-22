@@ -6,6 +6,7 @@
 				each kind in kinds
 					button.btn.example(data-example=kind)= kind
 					= " "
+				button.btn.custom custom...
 	.row
 		.span6
 			pre: code.original Original source code
@@ -14,3 +15,10 @@
 	.row
 		.span12
 			pre: code.mappings List of mappings
+.custom-modal.modal.fade.hide
+	.modal-header
+		button.close(data-dismiss="modal") &times;
+		h3 Custom SourceMap
+	.modal-body
+	.model-footer
+		.alert.alert-error.custom-error.hide

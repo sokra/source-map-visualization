@@ -29,6 +29,7 @@ $(function() {
 	$(".custom").click(function() {
 		$(".custom-modal .modal-body").html(require("./custom-step1.jade")());
 		$(".custom-modal").modal("show");
+		$(".custom-error").addClass("hide");
 
 		var generatedSource, sourceMap, originalSource;
 		$(".custom-continue").click(function() {
@@ -67,6 +68,8 @@ $(function() {
 					}
 					try {
 						_sourceMap = JSON.parse(_sourceMap);
+						if(!_sourceMap.sources) throw new Error("SourceMap has no sources field");
+						if(!_sourceMap.mappings) throw new Error("SourceMap has no mappings field");
 					} catch(e) {
 						$(".custom-error").removeClass("hide").text(e.message);
 						_sourceMap = false;
@@ -79,7 +82,18 @@ $(function() {
 			});
 		}
 		function step3() {
-			if(sourceMap.sourcesContent && sourceMap.sourcesContent.length == 1) {
+			if(!sourceMap.sources || !sourceMap.mappings) {
+				return $(".custom-error")
+					.removeClass("hide")
+					.text("This is not a valid SourceMap.");
+			}
+			if(sourceMap.sources.length !== 1) {
+				return $(".custom-error")
+					.removeClass("hide")
+					.text("This tool can only process SourceMaps with a single source file.\n" +
+						"This SourceMap has multiple sources: " + sourceMap.sources.join(", "));
+			}
+			if(sourceMap.sourcesContent && sourceMap.sourcesContent.length >= 1) {
 				originalSource = sourceMap.sourcesContent[0];
 				return step4();
 			}
@@ -103,9 +117,6 @@ $(function() {
 		}
 		function step4() {
 			try {
-				if(sourceMap.sources.length > 1)
-					throw new Error("This tool can only process SourceMaps with a single source file.\n" +
-						"This SourceMap has multiple sources: " + sourceMap.sources.join(", "));
 				loadExample(originalSource, generatedSource, sourceMap)
 				$(".custom-modal").modal("hide");
 			} catch(e) {

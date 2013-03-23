@@ -1,0 +1,25 @@
+import "js/web.jsx";
+
+class Greeter {
+    var greeting : string;
+    function constructor(message : string) {
+        this.greeting = message;
+    }
+    function greet() : string {
+        return "Hello, " + this.greeting;
+    }
+}
+
+class _Main {
+    static function main(args : string[]) : void {
+        var greeter = new Greeter("world");
+
+        var button = dom.document.createElement('button') as HTMLButtonElement;
+        button.innerHTML = "Say Hello";
+        button.onclick = (event) -> {
+            dom.window.alert(greeter.greet());
+        };
+
+        dom.document.body.appendChild(button);
+    }
+}

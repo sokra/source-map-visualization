@@ -4,9 +4,9 @@
 			h1 source-map-visualization
 			p
 				each kind in kinds
-					button.btn.example(data-example=kind)= kind
+					a(href="#"+kind).btn.example(data-example=kind)= kind
 					= " "
-				button.btn.custom custom...
+				a(href="#custom-choose").btn.custom custom...
 	.row
 		.span6
 			pre: code.original Original source code
@@ -17,7 +17,7 @@
 			pre: code.mappings List of mappings
 .custom-modal.modal.fade.hide
 	.modal-header
-		button.close(data-dismiss="modal") &times;
+		a.close(data-dismiss="modal") &times;
 		h3 Custom SourceMap
 	.modal-body
 	.model-footer

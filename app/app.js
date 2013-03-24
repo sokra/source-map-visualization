@@ -1,3 +1,4 @@
+require("jquery-hashchange");
 var SourceMap = require("source-map");
 var UglifyJS = require("./uglify-js");
 
@@ -9,123 +10,128 @@ $(function() {
 	require("./app.less");
 	$("body").html(require("./app.jade")({kinds: exampleKinds}));
 
-	var example = require("!raw!../example/typescript/example");
-	var exampleJs = require("!raw!../example/typescript/example.js");
-	var exampleMap = require("!json!../example/typescript/example.map");
-	loadExample(example, exampleJs, exampleMap);
-
-	$(".example").click(function() {
-		var exampleKind = $(this).data("example");
-		var example = require("!raw!../example/"+exampleKind+"/example");
-		var exampleJs = require("!raw!../example/"+exampleKind+"/example.js");
-		var exampleMap = require("!json!../example/"+exampleKind+"/example.map");
-		loadExample(example, exampleJs, exampleMap);
+	var oldHash = "";
+	$(".close").click(function() {
+		window.location.hash = oldHash;
 	});
 
-	$(".custom-modal").modal({
-		show: false
-	});
+	$(window).hashchange(function() {
+		var exampleKind = window.location.hash.replace(/^#/, "").toLowerCase();
 
-	$(".custom").click(function() {
-		$(".custom-modal .modal-body").html(require("./custom-step1.jade")());
-		$(".custom-modal").modal("show");
-		$(".custom-error").addClass("hide");
+		if(exampleKind === "custom") return;
+		if(exampleKind === "custom-choose") {
 
-		var generatedSource, sourceMap, originalSource;
-		$(".custom-continue").click(function() {
-			$(".custom-continue").attr("disabled", true);
-			loadFile($(".file"), function(err, _generatedSource) {
-				$(".custom-error").addClass("hide");
-				if(err) {
-					$(".custom-error").removeClass("hide").text(err.message);
+			$(".custom-modal .modal-body").html(require("./custom-step1.jade")());
+			$(".custom-modal").modal({
+				show: true
+			});
+			$(".custom-error").addClass("hide");
+
+			var generatedSource, sourceMap, originalSource;
+			$(".custom-continue").click(function() {
+				$(".custom-continue").attr("disabled", true);
+				loadFile($(".file"), function(err, _generatedSource) {
+					$(".custom-error").addClass("hide");
+					if(err) {
+						$(".custom-error").removeClass("hide").text(err.message);
+						return $(".custom-continue").attr("disabled", false);
+					}
+					if(!_generatedSource)
+						return $(".custom-continue").attr("disabled", false);
+					generatedSource = _generatedSource;
+					step2();
+				});
+				return false;
+			});
+			var sourceMappingUrlRegExp = /\/\/@\s*sourceMappingURL\s*=\s*data:.*base64,(.*)/;
+			function step2() {
+				if(sourceMappingUrlRegExp.test(generatedSource) && typeof atob == "function") {
+					var match = sourceMappingUrlRegExp.exec(generatedSource);
+					try {
+						sourceMap = JSON.parse(atob(match[1]));
+						return step3();
+					} catch(e) {}
+				}
+				$(".custom-modal .modal-body").html(require("./custom-step2.jade")({
+					generatedSource: generatedSource
+				}));
+				$(".custom-continue").click(function() {
+					loadFile($(".file"), function(err, _sourceMap) {
+						$(".custom-error").addClass("hide");
+						if(err) {
+							$(".custom-error").removeClass("hide").text(err.message);
+							return $(".custom-continue").attr("disabled", false);
+						}
+						try {
+							_sourceMap = JSON.parse(_sourceMap);
+							if(!_sourceMap.sources) throw new Error("SourceMap has no sources field");
+							if(!_sourceMap.mappings) throw new Error("SourceMap has no mappings field");
+						} catch(e) {
+							$(".custom-error").removeClass("hide").text(e.message);
+							_sourceMap = false;
+						}
+						if(!_sourceMap)
+							return $(".custom-continue").attr("disabled", false);
+						sourceMap = _sourceMap;
+						step3();
+					});
+				});
+			}
+			function step3() {
+				if(!sourceMap.sources || !sourceMap.mappings) {
+					return $(".custom-error")
+						.removeClass("hide")
+						.text("This is not a valid SourceMap.");
+				}
+				if(sourceMap.sources.length !== 1) {
+					return $(".custom-error")
+						.removeClass("hide")
+						.text("This tool can only process SourceMaps with a single source file.\n" +
+							"This SourceMap has multiple sources: " + sourceMap.sources.join(", "));
+				}
+				if(sourceMap.sourcesContent && sourceMap.sourcesContent.length >= 1) {
+					originalSource = sourceMap.sourcesContent[0];
+					return step4();
+				}
+				$(".custom-modal .modal-body").html(require("./custom-step3.jade")({
+					generatedSource: generatedSource,
+					sourceMap: sourceMap
+				}));
+				$(".custom-continue").click(function() {
+					loadFile($(".file"), function(err, _originalSource) {
+						$(".custom-error").addClass("hide");
+						if(err) {
+							$(".custom-error").removeClass("hide").text(err.message);
+							return $(".custom-continue").attr("disabled", false);
+						}
+						if(!_originalSource)
+							return $(".custom-continue").attr("disabled", false);
+						originalSource = _originalSource;
+						return step4();
+					});
+				});
+			}
+			function step4() {
+				try {
+					loadExample(originalSource, generatedSource, sourceMap)
+					$(".custom-modal").modal("hide");
+					oldHash = window.location.hash = "custom";
+				} catch(e) {
+					$(".custom-error").removeClass("hide").text(e.message);
 					return $(".custom-continue").attr("disabled", false);
 				}
-				if(!_generatedSource)
-					return $(".custom-continue").attr("disabled", false);
-				generatedSource = _generatedSource;
-				step2();
-			});
-			return false;
-		});
-		var sourceMappingUrlRegExp = /\/\/@\s*sourceMappingURL\s*=\s*data:.*base64,(.*)/;
-		function step2() {
-			if(sourceMappingUrlRegExp.test(generatedSource) && typeof atob == "function") {
-				var match = sourceMappingUrlRegExp.exec(generatedSource);
-				try {
-					sourceMap = JSON.parse(atob(match[1]));
-					return step3();
-				} catch(e) {}
 			}
-			$(".custom-modal .modal-body").html(require("./custom-step2.jade")({
-				generatedSource: generatedSource
-			}));
-			$(".custom-continue").click(function() {
-				loadFile($(".file"), function(err, _sourceMap) {
-					$(".custom-error").addClass("hide");
-					if(err) {
-						$(".custom-error").removeClass("hide").text(err.message);
-						return $(".custom-continue").attr("disabled", false);
-					}
-					try {
-						_sourceMap = JSON.parse(_sourceMap);
-						if(!_sourceMap.sources) throw new Error("SourceMap has no sources field");
-						if(!_sourceMap.mappings) throw new Error("SourceMap has no mappings field");
-					} catch(e) {
-						$(".custom-error").removeClass("hide").text(e.message);
-						_sourceMap = false;
-					}
-					if(!_sourceMap)
-						return $(".custom-continue").attr("disabled", false);
-					sourceMap = _sourceMap;
-					step3();
-				});
-			});
+
+		} else {
+			if(exampleKinds.indexOf(exampleKind) < 0) exampleKind = "typescript";
+			var example = require("!raw!../example/"+exampleKind+"/example");
+			var exampleJs = require("!raw!../example/"+exampleKind+"/example.js");
+			var exampleMap = require("!json!../example/"+exampleKind+"/example.map");
+			loadExample(example, exampleJs, exampleMap);
+			oldHash = exampleKind;
 		}
-		function step3() {
-			if(!sourceMap.sources || !sourceMap.mappings) {
-				return $(".custom-error")
-					.removeClass("hide")
-					.text("This is not a valid SourceMap.");
-			}
-			if(sourceMap.sources.length !== 1) {
-				return $(".custom-error")
-					.removeClass("hide")
-					.text("This tool can only process SourceMaps with a single source file.\n" +
-						"This SourceMap has multiple sources: " + sourceMap.sources.join(", "));
-			}
-			if(sourceMap.sourcesContent && sourceMap.sourcesContent.length >= 1) {
-				originalSource = sourceMap.sourcesContent[0];
-				return step4();
-			}
-			$(".custom-modal .modal-body").html(require("./custom-step3.jade")({
-				generatedSource: generatedSource,
-				sourceMap: sourceMap
-			}));
-			$(".custom-continue").click(function() {
-				loadFile($(".file"), function(err, _originalSource) {
-					$(".custom-error").addClass("hide");
-					if(err) {
-						$(".custom-error").removeClass("hide").text(err.message);
-						return $(".custom-continue").attr("disabled", false);
-					}
-					if(!_originalSource)
-						return $(".custom-continue").attr("disabled", false);
-					originalSource = _originalSource;
-					return step4();
-				});
-			});
-		}
-		function step4() {
-			try {
-				loadExample(originalSource, generatedSource, sourceMap)
-				$(".custom-modal").modal("hide");
-			} catch(e) {
-				$(".custom-error").removeClass("hide").text(e.message);
-				return $(".custom-continue").attr("disabled", false);
-			}
-		}
-		return false;
 	});
+	$(window).hashchange();
 
 	function loadExample(example, exampleJs, exampleMap) {
 		exampleMap.file = exampleMap.file || "example.js";

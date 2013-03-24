@@ -279,6 +279,7 @@ $(function() {
 				minmap = minmap.toJSON();
 
 				loadExample(example, result.code, minmap);
+				oldHash = window.location.hash = "custom";
 			}));
 	}
 });

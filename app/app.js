@@ -2,7 +2,7 @@ require("jquery-hashchange");
 var SourceMap = require("source-map");
 var UglifyJS = require("./uglify-js");
 
-var exampleKinds = ["minimize", "beautify", "coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
+var exampleKinds = ["coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
 var LINESTYLES = 5;
 
 $(function() {
@@ -16,8 +16,21 @@ $(function() {
 	});
 
 	$(window).hashchange(function() {
-		var exampleKind = window.location.hash.replace(/^#/, "").toLowerCase();
+		var exampleKind = window.location.hash.replace(/^#/, "");
 
+		if(exampleKind !== "custom-choose")
+			$(".custom-modal").modal("hide");
+
+		if(exampleKind.indexOf("base64") === 0) {
+			var input = exampleKind.split(",").map(atob);
+			input.shift(); // === "base64"
+			var gen = input.shift();
+			var map = JSON.parse(input.shift());
+			loadExample(input, gen, map);
+			oldHash = exampleKind;
+			return;
+		}
+		exampleKind = exampleKind.toLowerCase();
 		if(exampleKind === "custom") return;
 		if(exampleKind === "custom-choose") {
 
@@ -27,7 +40,7 @@ $(function() {
 			});
 			$(".custom-error").addClass("hide");
 
-			var generatedSource, sourceMap, originalSource;
+			var generatedSource, sourceMap, sourcesContent = [];
 			$(".custom-continue").click(function() {
 				$(".custom-continue").attr("disabled", true);
 				loadFile($(".file"), function(err, _generatedSource) {
@@ -83,19 +96,23 @@ $(function() {
 						.removeClass("hide")
 						.text("This is not a valid SourceMap.");
 				}
-				if(sourceMap.sources.length !== 1) {
-					return $(".custom-error")
-						.removeClass("hide")
-						.text("This tool can only process SourceMaps with a single source file.\n" +
-							"This SourceMap has multiple sources: " + sourceMap.sources.join(", "));
-				}
-				if(sourceMap.sourcesContent && sourceMap.sourcesContent.length >= 1) {
-					originalSource = sourceMap.sourcesContent[0];
+				if(sourceMap.sourcesContent) {
+					sourcesContent = sourceMap.sourcesContent;
 					return step4();
 				}
+				var sourceFile, sourceFileIndex;
+				for(var i = 0; i < sourceMap.sources.length; i++) {
+					if(!sourcesContent[i]) {
+						sourceFile = sourceMap.sources[i];
+						sourceFileIndex = i;
+						break;
+					}
+				}
+				if(i == sourceMap.sources.length) return step4();
 				$(".custom-modal .modal-body").html(require("./custom-step3.jade")({
 					generatedSource: generatedSource,
-					sourceMap: sourceMap
+					sourceMap: sourceMap,
+					source: sourceFile
 				}));
 				$(".custom-continue").click(function() {
 					loadFile($(".file"), function(err, _originalSource) {
@@ -106,34 +123,40 @@ $(function() {
 						}
 						if(!_originalSource)
 							return $(".custom-continue").attr("disabled", false);
-						originalSource = _originalSource;
-						return step4();
+						sourcesContent[sourceFileIndex] = _originalSource;
+						return step3();
 					});
 				});
 			}
 			function step4() {
 				try {
-					loadExample(originalSource, generatedSource, sourceMap)
+					loadExample(sourcesContent, generatedSource, sourceMap)
 					$(".custom-modal").modal("hide");
 					oldHash = window.location.hash = "custom";
+					$(".custom-link").attr("href", "#base64," + [generatedSource, JSON.stringify(sourceMap)].concat(sourcesContent).map(btoa).join(",")).text("Link to this");
 				} catch(e) {
 					$(".custom-error").removeClass("hide").text(e.message);
+					console.error(e.stack);
 					return $(".custom-continue").attr("disabled", false);
 				}
 			}
 
 		} else {
 			if(exampleKinds.indexOf(exampleKind) < 0) exampleKind = "typescript";
-			var example = require("!raw!../example/"+exampleKind+"/example");
 			var exampleJs = require("!raw!../example/"+exampleKind+"/example.js");
 			var exampleMap = require("!json!../example/"+exampleKind+"/example.map");
-			loadExample(example, exampleJs, exampleMap);
+			var sources = exampleMap.sourcesContent;
+			if(!sources) {
+				sources = [require("!raw!../example/"+exampleKind+"/example")];
+			}
+			loadExample(sources, exampleJs, exampleMap);
+			$(".custom-link").text("");
 			oldHash = exampleKind;
 		}
 	});
 	$(window).hashchange();
 
-	function loadExample(example, exampleJs, exampleMap) {
+	function loadExample(sources, exampleJs, exampleMap) {
 		exampleMap.file = exampleMap.file || "example.js";
 		var map = new SourceMap.SourceMapConsumer(exampleMap);
 
@@ -141,63 +164,76 @@ $(function() {
 		var original = $(".original").text("");
 		var mappings = $(".mappings").text("1: ");
 
-		if(exampleJs.substr(0, 1) == "\n" || exampleJs.substr(0, 1) == "\r") {
-			generated.append($("<button>")
-				.addClass("btn btn-danger")
-				.text("remove first line")
-				.attr("title", "What would happen if this line has be removed?")
-				.click(function() {
-					loadExample(example, exampleJs.replace(/^\r?\n?/, ""), exampleMap);
-				}));
-		}
-
 		var nodes = SourceMap.SourceNode.fromStringWithSourceMap(exampleJs, map).children;
 		nodes.forEach(function(item) {
 			if(typeof item === "string") {
 				generated.append($("<span>").text(item));
 			} else {
 				var str = item.toString();
+				var source = map.sources.indexOf(item.source);
 				generated.append($("<span>")
 					.addClass("generated-item")
-					.addClass("item-" + item.line + "-" + item.column)
+					.addClass("item-" + source + "-" + item.line + "-" + item.column)
 					.attr("title", item.name)
+					.data("source", source)
 					.data("line", item.line)
 					.data("column", item.column)
 					.addClass("style-" + (item.line%LINESTYLES))
 					.text(str));
 			}
 		});
-		var exampleLines = example.split("\n");
 		var lastGenLine = 1;
+		var lastOrgSource = "";
 		map.eachMapping(function(mapping) {
 			while(lastGenLine < mapping.generatedLine) {
 				mappings.append($("<br>"));
 				lastGenLine++;
 				mappings.append($("<span>").text(lastGenLine + ": "));
 			}
-			if(typeof mapping.originalLine == "number")
+			if(typeof mapping.originalLine == "number") {
+				if(lastOrgSource !== mapping.source && map.sources.length > 1) {
+					mappings.append($("<span>").text("[" + mapping.source + "] "));
+					lastOrgSource = mapping.source;
+				}
+				var source = map.sources.indexOf(mapping.source);
 				mappings.append(
 					$("<span>")
 						.text(mapping.generatedColumn + "->" + mapping.originalLine + ":" + mapping.originalColumn)
 						.addClass("mapping-item")
-						.addClass("item-" + mapping.originalLine + "-" + mapping.originalColumn)
+						.addClass("item-" + source + "-" + mapping.originalLine + "-" + mapping.originalColumn)
+						.data("source", source)
 						.data("line", mapping.originalLine)
 						.data("column", mapping.originalColumn)
 						.addClass("style-" + (mapping.originalLine%LINESTYLES))
 				);
-			else
+			} else
 				mappings.append($("<span>").text(mapping.generatedColumn).addClass("mapping-item"));
 			mappings.append($("<span>").text("  "));
 		});
 		var line = 1, column = 0;
 		var lastMapping = null;
+		var currentSource = null;
+		var exampleLines;
 		map.eachMapping(function(mapping) {
 			if(typeof mapping.originalLine !== "number") return;
+			if(currentSource !== mapping.source) {
+				if(currentSource) endFile();
+				lastMapping = null;
+				line = 1;
+				column = 0;
+				if(map.sources.length > 1)
+					original.append($("<h4>")
+						.text(mapping.source));
+				exampleLines = sources[map.sources.indexOf(mapping.source)].split("\n");
+				currentSource = mapping.source;
+			}
 			if(lastMapping) {
+				var source = map.sources.indexOf(lastMapping.source);
 				if(line < mapping.originalLine) {
 					original.append($("<span>")
 						.addClass("original-item")
-						.addClass("item-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
+						.addClass("item-" + source + "-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
+						.data("source", source)
 						.data("line", lastMapping.originalLine)
 						.data("column", lastMapping.originalColumn)
 						.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
@@ -214,7 +250,8 @@ $(function() {
 				if(mapping.originalColumn > column) {
 					original.append($("<span>")
 						.addClass("original-item")
-						.addClass("item-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
+						.addClass("item-" + source + "-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
+						.data("source", source)
 						.data("line", lastMapping.originalLine)
 						.data("column", lastMapping.originalColumn)
 						.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
@@ -231,15 +268,20 @@ $(function() {
 			}
 			lastMapping = mapping;
 		}, undefined, SourceMap.SourceMapConsumer.ORIGINAL_ORDER);
-		if(lastMapping) {
-			original.append($("<span>")
-				.addClass("original-item")
-				.addClass("item-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
-				.data("line", lastMapping.originalLine)
-				.data("column", lastMapping.originalColumn)
-				.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
-				.text(exampleLines.shift()));
+		function endFile() {
+			if(lastMapping) {
+				var source = map.sources.indexOf(lastMapping.source);
+				original.append($("<span>")
+					.addClass("original-item")
+					.addClass("item-" + source + "-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
+					.data("source", source)
+					.data("line", lastMapping.originalLine)
+					.data("column", lastMapping.originalColumn)
+					.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
+					.text(exampleLines.shift()));
+			}
 		}
+		endFile();
 		exampleLines.forEach(function(line) {
 			original.append($("<span>").text("\n" + line));
 		});
@@ -253,9 +295,10 @@ $(function() {
 
 		$("body").delegate(".original-item, .generated-item, .mapping-item", "mouseenter", function() {
 			$(".selected").removeClass("selected");
+			var source = $(this).data("source");
 			var line = $(this).data("line");
 			var column = $(this).data("column");
-			$(".item-" + line + "-" + column).addClass("selected");
+			$(".item-" + source + "-" + line + "-" + column).addClass("selected");
 		});
 
 		generated.append($("<br>"));
@@ -272,13 +315,19 @@ $(function() {
 				minmap.file = "example";
 				minmap = new SourceMap.SourceMapConsumer(result.map);
 				minmap = SourceMap.SourceMapGenerator.fromSourceMap(minmap);
+				minmap.setSourceContent("?", exampleJs);
+				map.sourcesContent = sources;
 				minmap.applySourceMap(map, "?");
-				try {
-					minmap.removeSource("?");
-				} catch(e) {}
 				minmap = minmap.toJSON();
+				var idx = minmap.sources.indexOf("?");
+				if(idx >= 0) {
+					var name = "example.js";
+					while(minmap.sources.indexOf(name) >= 0)
+						name += "*";
+					minmap.sources[idx] = name;
+				}
 
-				loadExample(example, result.code, minmap);
+				loadExample(minmap.sourcesContent, result.code, minmap);
 				oldHash = window.location.hash = "custom";
 			}));
 	}

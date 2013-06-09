@@ -56,7 +56,7 @@ $(function() {
 				});
 				return false;
 			});
-			var sourceMappingUrlRegExp = /\/\/@\s*sourceMappingURL\s*=\s*data:.*base64,(.*)/;
+			var sourceMappingUrlRegExp = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)/;
 			function step2() {
 				if(sourceMappingUrlRegExp.test(generatedSource) && typeof atob == "function") {
 					var match = sourceMappingUrlRegExp.exec(generatedSource);

@@ -5,6 +5,7 @@ module.exports = {
 		path: path.join(__dirname, "assets"),
 		publicPath: "assets/",
 		filename: "web.js",
+		sourceMapFilename: "[id].[hash].map",
 		chunkFilename: "[id].[hash].js",
 		jsonpCallback: "a"
 	},

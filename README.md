@@ -17,7 +17,7 @@ Publish:
 ``` text
 git checkout gh-pages
 git merge master
-webpack --colors --progress --optimize-minimize
+webpack --colors --progress -p --output-devtool sourcemap
 git add assets
 git commit -m "Publish"
 git checkout master

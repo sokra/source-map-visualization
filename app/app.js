@@ -4,6 +4,7 @@ var UglifyJS = require("./uglify-js");
 
 var exampleKinds = ["coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
 var LINESTYLES = 5;
+var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)/;
 
 $(function() {
 	require("bootstrap");
@@ -56,10 +57,9 @@ $(function() {
 				});
 				return false;
 			});
-			var sourceMappingUrlRegExp = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)/;
 			function step2() {
-				if(sourceMappingUrlRegExp.test(generatedSource) && typeof atob == "function") {
-					var match = sourceMappingUrlRegExp.exec(generatedSource);
+				if(SOURCE_MAPPING_URL_REG_EXP.test(generatedSource) && typeof atob == "function") {
+					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource);
 					try {
 						sourceMap = JSON.parse(atob(match[1]));
 						return step3();
@@ -156,52 +156,130 @@ $(function() {
 	});
 	$(window).hashchange();
 
-  function isGenerated(file) {
-    return file.name.substr(-3) === ".js";
-  }
+	function isGenerated(file) {
+		return file.name.substr(-3) === ".js";
+	}
 
-  function isSourceMap(file) {
-    return file.name.substr(-5) === ".json" ||
-      file.name.substr(-4) === ".map";
-  }
+	function isSourceMap(file) {
+		return file.name.substr(-5) === ".json" ||
+			file.name.substr(-4) === ".map";
+	}
 
-  function isSource(file) {
-    return !isGenerated(file) && !isSourceMap(file);
-  }
+	function isSource(file) {
+		return !isGenerated(file) && !isSourceMap(file);
+	}
 
-  function reduce(fn, initial, arrayLike) {
-    return Array.prototype.reduce.call(arrayLike, fn, initial)
-  }
+	function reduce(fn, initial, arrayLike) {
+		return Array.prototype.reduce.call(arrayLike, fn, initial)
+	}
 
-  $(window).on("dragenter dragover", function(e) {
-    $(this).toggleClass('drop-target');
-    return false;
-  }).on("drop", function(e) {
-    e.stopPropagation();
-    e.preventDefault();
+	$(window).on("dragenter dragover", function(e) {
+		e.stopPropagation();
+		e.preventDefault();
 
-    var files = e.originalEvent.dataTransfer.files;
-    if (files.length === 3) {
-      var example = reduce(function(result, file) {
-        if (isGenerated(file)) result.generated = file;
-        if (isSourceMap(file)) result.map = file;
-        else result.source = file;
-        return result;
-      }, {}, files);
+		var m = $(".custom-modal").data("modal");
+		if(m && m.isShown) return;
+		$(".custom-modal .modal-body").html(require("./custom-drag.jade")());
+		$(".custom-modal").modal({
+			show: true
+		});
+		$(".custom-error").addClass("hide");
+		return false;
+	});
+	$(window).on("drop", function(e) {
+		e.stopPropagation();
+		e.preventDefault();
 
-      readFile(example.generated, function(error, generated) {
-        if (error) return;
-        readFile(example.map, function(error, map) {
-          if (error) return;
-          readFile(example.source, function(error, source) {
-            console.log(source, generated, map);
-            loadExample([source], generated, JSON.parse(map));
-          });
-        });
-      });
-    }
-    return false;
-  });
+		var files = e.originalEvent.dataTransfer.files;
+		var count = files.length;
+		if(count === 0) return false;
+		var filesData = Array.prototype.map.call(files, function(file) { return { file: file, name: file.name }; });
+		filesData.forEach(function(data) {
+			readFile(data.file, function(err, result) {
+				data.err = err;
+				data.result = result;
+				if(--count === 0) finished();
+			});
+		});
+		return false;
+		function finished() {
+			try {
+				var erroredFiles = filesData.filter(function(data) { return data.err; });
+				if(erroredFiles.length > 0) {
+					var errorText = erroredFiles.map(function(data) {
+						return data.name + ": " + data.err;
+					}).join("\n");
+					throw new Error(errorText);
+				}
+				var sourceMapFile, generatedFile;
+				var javascriptWithSourceMap = filesData.filter(function(data) {
+					return /\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result);
+				})[0];
+				if(javascriptWithSourceMap) {
+					// Extract SourceMap from base64 DataUrl
+					generatedFile = javascriptWithSourceMap;
+					filesData.splice(filesData.indexOf(generatedFile), 1);
+					if(typeof atob !== "function")
+						throw new Error("Your browser doesn't support atob. Cannot decode base64.");
+					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource);
+					sourceMapFile = {
+						result: atob(match[1])
+					};
+					sourceFile.json = JSON.parse(sourceFile.result);
+				} else {
+					// Find SourceMap in provided files
+					var mapFiles = filesData.filter(function(data) {
+						return /\.map$/.test(data.name);
+					});
+					if(mapFiles.length === 1) {
+						// Use the .map file as SourceMap
+						sourceMapFile = mapFiles[0];
+						filesData.splice(filesData.indexOf(sourceMapFile), 1);
+					} else {
+						var jsonFiles = filesData.filter(function(data) {
+							return /\.json$/.test(data.name);
+						});
+						if(jsonFiles.length === 1) {
+							// Use the .json file as SourceMap
+							sourceMapFile = jsonFiles[0];
+							filesData.splice(filesData.indexOf(sourceMapFile), 1);
+						} else {
+							throw new Error("No SourceMap provided.");
+						}
+					}
+					sourceMapFile.json = JSON.parse(sourceMapFile.result);
+
+					// get name from SourceMap
+					var name = sourceMapFile.json.file;
+					generatedFile = filesData.filter(function(data) {
+						// The file with the exact name
+						return data.name === name;
+					})[0] || filesData.filter(function(data) {
+						// The first js file
+						return /\.js$/.test(data.name);
+					})[0];
+					if(!generatedFile) {
+						throw Error("No original file provided.");
+					}
+					filesData.splice(filesData.indexOf(generatedFile), 1);
+				}
+				var providedSourcesContent = filesData.map(function(data) { return data.result; });
+				var sourcesContentSet = sourceMapFile.json.sourcesContent && sourceMapFile.json.sourcesContent.length > 0
+				if(providedSourcesContent.length > 0 && sourcesContentSet)
+					throw new Error("Provided source files and sourcesContent in SourceMap is set.");
+				loadExample(
+					sourcesContentSet ? sourceMapFile.json.sourcesContent : providedSourcesContent,
+					generatedFile.result,
+					sourceMapFile.json
+				);
+				$(".custom-modal").modal("hide");
+				oldHash = window.location.hash = "custom";
+			} catch(err) {
+				return $(".custom-error").removeClass("hide").text(err.message).attr("title", err.stack);
+			}
+		}
+		return false;
+	});
 
 	function loadExample(sources, exampleJs, exampleMap) {
 		exampleMap.file = exampleMap.file || "example.js";
@@ -271,7 +349,9 @@ $(function() {
 				if(map.sources.length > 1)
 					original.append($("<h4>")
 						.text(mapping.source));
-				exampleLines = sources[map.sources.indexOf(mapping.source)].split("\n");
+				var exampleSource = sources[map.sources.indexOf(mapping.source)];
+				if(!exampleSource) throw new Error("Source '" + mapping.source + "' missing");
+				exampleLines = exampleSource.split("\n");
 				currentSource = mapping.source;
 			}
 			if(lastMapping) {
@@ -381,38 +461,38 @@ $(function() {
 });
 
 function readFile(file, callback) {
-  var fileReader = new FileReader();
-  fileReader.readAsText(file, "utf-8");
-  fileReader.onload = function(e) {
-    callback(null, fileReader.result);
-  };
-  fileReader.onprogess = function(evt) {
-    if (evt.lengthComputable) {
-      var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-      if (percentLoaded < 100) {
-        $(".read-progress").css("width", percentLoaded + "%");
-      }
-    }
-  };
-  fileReader.onabort = function(e) {
-    return callback(new Error('File read cancelled'));
-  };
-  fileReader.onerror = function(evt) {
-    switch(evt.target.error.code) {
-      case evt.target.error.NOT_FOUND_ERR:
-        return callback(new Error('File Not Found!'));
-      case evt.target.error.NOT_READABLE_ERR:
-        return callback(new Error('File is not readable'));
-      case evt.target.error.ABORT_ERR:
-        return callback();
-      default:
-        return callback(new Error('An error occurred reading this file.'));
-    }
-  };
+	var fileReader = new FileReader();
+	fileReader.readAsText(file, "utf-8");
+	fileReader.onload = function(e) {
+		callback(null, fileReader.result);
+	};
+	fileReader.onprogess = function(evt) {
+		if (evt.lengthComputable) {
+			var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+			if (percentLoaded < 100) {
+				$(".read-progress").css("width", percentLoaded + "%");
+			}
+		}
+	};
+	fileReader.onabort = function(e) {
+		return callback(new Error('File read cancelled'));
+	};
+	fileReader.onerror = function(evt) {
+		switch(evt.target.error.code) {
+			case evt.target.error.NOT_FOUND_ERR:
+				return callback(new Error('File Not Found!'));
+			case evt.target.error.NOT_READABLE_ERR:
+				return callback(new Error('File is not readable'));
+			case evt.target.error.ABORT_ERR:
+				return callback();
+			default:
+				return callback(new Error('An error occurred reading this file.'));
+		}
+	};
 }
 
 function loadFile(fileInput, callback) {
 	var file = $(fileInput)[0].files[0];
 	if (!file) return callback();
-  readFile(file, callback);
+	readFile(file, callback);
 }

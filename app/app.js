@@ -156,6 +156,53 @@ $(function() {
 	});
 	$(window).hashchange();
 
+  function isGenerated(file) {
+    return file.name.substr(-3) === ".js";
+  }
+
+  function isSourceMap(file) {
+    return file.name.substr(-5) === ".json" ||
+      file.name.substr(-4) === ".map";
+  }
+
+  function isSource(file) {
+    return !isGenerated(file) && !isSourceMap(file);
+  }
+
+  function reduce(fn, initial, arrayLike) {
+    return Array.prototype.reduce.call(arrayLike, fn, initial)
+  }
+
+  $(window).on("dragenter dragover", function(e) {
+    $(this).toggleClass('drop-target');
+    return false;
+  }).on("drop", function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    var files = e.originalEvent.dataTransfer.files;
+    if (files.length === 3) {
+      var example = reduce(function(result, file) {
+        if (isGenerated(file)) result.generated = file;
+        if (isSourceMap(file)) result.map = file;
+        else result.source = file;
+        return result;
+      }, {}, files);
+
+      readFile(example.generated, function(error, generated) {
+        if (error) return;
+        readFile(example.map, function(error, map) {
+          if (error) return;
+          readFile(example.source, function(error, source) {
+            console.log(source, generated, map);
+            loadExample([source], generated, JSON.parse(map));
+          });
+        });
+      });
+    }
+    return false;
+  });
+
 	function loadExample(sources, exampleJs, exampleMap) {
 		exampleMap.file = exampleMap.file || "example.js";
 		var map = new SourceMap.SourceMapConsumer(exampleMap);
@@ -333,35 +380,39 @@ $(function() {
 	}
 });
 
+function readFile(file, callback) {
+  var fileReader = new FileReader();
+  fileReader.readAsText(file, "utf-8");
+  fileReader.onload = function(e) {
+    callback(null, fileReader.result);
+  };
+  fileReader.onprogess = function(evt) {
+    if (evt.lengthComputable) {
+      var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+      if (percentLoaded < 100) {
+        $(".read-progress").css("width", percentLoaded + "%");
+      }
+    }
+  };
+  fileReader.onabort = function(e) {
+    return callback(new Error('File read cancelled'));
+  };
+  fileReader.onerror = function(evt) {
+    switch(evt.target.error.code) {
+      case evt.target.error.NOT_FOUND_ERR:
+        return callback(new Error('File Not Found!'));
+      case evt.target.error.NOT_READABLE_ERR:
+        return callback(new Error('File is not readable'));
+      case evt.target.error.ABORT_ERR:
+        return callback();
+      default:
+        return callback(new Error('An error occurred reading this file.'));
+    }
+  };
+}
+
 function loadFile(fileInput, callback) {
 	var file = $(fileInput)[0].files[0];
-	if(!file) return callback();
-	var fileReader = new FileReader();
-	fileReader.readAsText(file, "utf-8");
-	fileReader.onload = function(e) {
-		callback(null, fileReader.result);
-	};
-    fileReader.onprogess = function(evt) {
-		if (evt.lengthComputable) {
-			var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-			if (percentLoaded < 100) {
-				$(".read-progress").css("width", percentLoaded + "%");
-			}
-		}
-	};
-    fileReader.onabort = function(e) {
-		return callback(new Error('File read cancelled'));
-    };
-	fileReader.onerror = function(evt) {
-		switch(evt.target.error.code) {
-			case evt.target.error.NOT_FOUND_ERR:
-				return callback(new Error('File Not Found!'));
-			case evt.target.error.NOT_READABLE_ERR:
-				return callback(new Error('File is not readable'));
-			case evt.target.error.ABORT_ERR:
-				return callback();
-			default:
-				return callback(new Error('An error occurred reading this file.'));
-		}
-	};
+	if (!file) return callback();
+  readFile(file, callback);
 }

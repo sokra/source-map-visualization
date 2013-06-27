@@ -156,23 +156,6 @@ $(function() {
 	});
 	$(window).hashchange();
 
-	function isGenerated(file) {
-		return file.name.substr(-3) === ".js";
-	}
-
-	function isSourceMap(file) {
-		return file.name.substr(-5) === ".json" ||
-			file.name.substr(-4) === ".map";
-	}
-
-	function isSource(file) {
-		return !isGenerated(file) && !isSourceMap(file);
-	}
-
-	function reduce(fn, initial, arrayLike) {
-		return Array.prototype.reduce.call(arrayLike, fn, initial)
-	}
-
 	$(window).on("dragenter dragover", function(e) {
 		e.stopPropagation();
 		e.preventDefault();

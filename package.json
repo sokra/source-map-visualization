@@ -10,8 +10,8 @@
   "author": "Tobias Koppers @sokra",
   "license": "MIT",
   "devDependencies": {
-    "webpack": "~0.10.0",
-    "webpack-dev-server": "~0.10.0"
+    "webpack": "~0.11.0",
+    "webpack-dev-server": "~0.11.0"
   },
   "dependencies": {
     "source-map": "0.1.x",

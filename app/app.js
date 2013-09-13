@@ -5,6 +5,7 @@ var UglifyJS = require("./uglify-js");
 var exampleKinds = ["coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
 var LINESTYLES = 5;
 var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)/;
+var SOURCE_MAPPING_URL_REG_EXP2 = /\/*\s*[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)\s*\*\//;
 
 $(function() {
 	require("bootstrap");
@@ -58,8 +59,8 @@ $(function() {
 				return false;
 			});
 			function step2() {
-				if(SOURCE_MAPPING_URL_REG_EXP.test(generatedSource) && typeof atob == "function") {
-					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource);
+				if((SOURCE_MAPPING_URL_REG_EXP.test(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.test(generatedSource)) && typeof atob == "function") {
+					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
 					try {
 						sourceMap = JSON.parse(atob(match[1]));
 						return step3();
@@ -196,19 +197,21 @@ $(function() {
 				}
 				var sourceMapFile, generatedFile;
 				var javascriptWithSourceMap = filesData.filter(function(data) {
-					return /\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result);
+					return (/\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result)) || 
+							(/\.(css|js)$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP2.test(data.result));
 				})[0];
 				if(javascriptWithSourceMap) {
+					if(typeof atob !== "function")
+						throw new Error("Your browser doesn't support atob. Cannot decode base64.");
 					// Extract SourceMap from base64 DataUrl
 					generatedFile = javascriptWithSourceMap;
 					filesData.splice(filesData.indexOf(generatedFile), 1);
-					if(typeof atob !== "function")
-						throw new Error("Your browser doesn't support atob. Cannot decode base64.");
-					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource);
+					var generatedSource = generatedFile.result;
+					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
 					sourceMapFile = {
 						result: atob(match[1])
 					};
-					sourceFile.json = JSON.parse(sourceFile.result);
+					sourceMapFile.json = JSON.parse(sourceMapFile.result);
 				} else {
 					// Find SourceMap in provided files
 					var mapFiles = filesData.filter(function(data) {

@@ -1,4 +1,4 @@
-require("jquery-hashchange");
+require("imports?this=>window!jquery-hashchange");
 var SourceMap = require("source-map");
 var UglifyJS = require("./uglify-js");
 

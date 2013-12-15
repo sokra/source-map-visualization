@@ -43,7 +43,9 @@ $(function() {
 			$(".custom-error").addClass("hide");
 
 			var generatedSource, sourceMap, sourcesContent = [];
-			$(".custom-continue").click(function() {
+			$(".custom-continue").click(continueWithStep2);
+			$(".file").change(continueWithStep2);
+			function continueWithStep2() {
 				$(".custom-continue").attr("disabled", true);
 				loadFile($(".file"), function(err, _generatedSource) {
 					$(".custom-error").addClass("hide");
@@ -57,7 +59,7 @@ $(function() {
 					step2();
 				});
 				return false;
-			});
+			}
 			function step2() {
 				if((SOURCE_MAPPING_URL_REG_EXP.test(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.test(generatedSource)) && typeof atob == "function") {
 					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
@@ -69,7 +71,9 @@ $(function() {
 				$(".custom-modal .modal-body").html(require("./custom-step2.jade")({
 					generatedSource: generatedSource
 				}));
-				$(".custom-continue").click(function() {
+				$(".custom-continue").click(continueWithStep3);
+				$(".file").change(continueWithStep3);
+				function continueWithStep3() {
 					loadFile($(".file"), function(err, _sourceMap) {
 						$(".custom-error").addClass("hide");
 						if(err) {
@@ -89,7 +93,7 @@ $(function() {
 						sourceMap = _sourceMap;
 						step3();
 					});
-				});
+				}
 			}
 			function step3() {
 				if(!sourceMap.sources || !sourceMap.mappings) {
@@ -115,7 +119,9 @@ $(function() {
 					sourceMap: sourceMap,
 					source: sourceFile
 				}));
-				$(".custom-continue").click(function() {
+				$(".custom-continue").click(continueWithStep4);
+				$(".file").change(continueWithStep4);
+				function continueWithStep4() {
 					loadFile($(".file"), function(err, _originalSource) {
 						$(".custom-error").addClass("hide");
 						if(err) {
@@ -127,14 +133,13 @@ $(function() {
 						sourcesContent[sourceFileIndex] = _originalSource;
 						return step3();
 					});
-				});
+				}
 			}
 			function step4() {
 				try {
-					loadExample(sourcesContent, generatedSource, sourceMap)
+					loadCustomExample(sourcesContent, generatedSource, sourceMap);
 					$(".custom-modal").modal("hide");
 					oldHash = window.location.hash = "custom";
-					$(".custom-link").attr("href", "#base64," + [generatedSource, JSON.stringify(sourceMap)].concat(sourcesContent).map(btoa).join(",")).text("Link to this");
 				} catch(e) {
 					$(".custom-error").removeClass("hide").text(e.message);
 					console.error(e.stack);
@@ -253,7 +258,7 @@ $(function() {
 				var sourcesContentSet = sourceMapFile.json.sourcesContent && sourceMapFile.json.sourcesContent.length > 0
 				if(providedSourcesContent.length > 0 && sourcesContentSet)
 					throw new Error("Provided source files and sourcesContent in SourceMap is set.");
-				loadExample(
+				loadCustomExample(
 					sourcesContentSet ? sourceMapFile.json.sourcesContent : providedSourcesContent,
 					generatedFile.result,
 					sourceMapFile.json
@@ -267,6 +272,10 @@ $(function() {
 		return false;
 	});
 
+	function loadCustomExample(sourcesContent, generatedSource, sourceMap) {
+		loadExample(sourcesContent, generatedSource, sourceMap);
+		$(".custom-link").attr("href", "#base64," + [generatedSource, JSON.stringify(sourceMap)].concat(sourcesContent).map(btoa).join(",")).text("Link to this");
+	}
 	function loadExample(sources, exampleJs, exampleMap) {
 		var generated = $(".generated").hide().text("");
 		var original = $(".original").hide().text("");

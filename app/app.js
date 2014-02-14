@@ -24,7 +24,9 @@ $(function() {
 			$(".custom-modal").modal("hide");
 
 		if(exampleKind.indexOf("base64") === 0) {
-			var input = exampleKind.split(",").map(atob);
+			var input = exampleKind.split(",").map(function(str) {
+				return decodeURIComponent(escape(atob(str)));
+			});
 			input.shift(); // === "base64"
 			var gen = input.shift();
 			var map = JSON.parse(input.shift());
@@ -64,7 +66,7 @@ $(function() {
 				if((SOURCE_MAPPING_URL_REG_EXP.test(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.test(generatedSource)) && typeof atob == "function") {
 					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
 					try {
-						sourceMap = JSON.parse(decodeURIComponent(escape(window.atob(match[1]))));
+						sourceMap = JSON.parse(decodeURIComponent(escape(atob(match[1]))));
 						return step3();
 					} catch(e) {}
 				}
@@ -214,7 +216,7 @@ $(function() {
 					var generatedSource = generatedFile.result;
 					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
 					sourceMapFile = {
-						result: atob(match[1])
+						result: decodeURIComponent(escape(atob(match[1])))
 					};
 					sourceMapFile.json = JSON.parse(sourceMapFile.result);
 				} else {
@@ -275,7 +277,7 @@ $(function() {
 	function loadCustomExample(sourcesContent, generatedSource, sourceMap) {
 		loadExample(sourcesContent, generatedSource, sourceMap);
 		$(".custom-link").attr("href", "#base64," + [generatedSource, JSON.stringify(sourceMap)].concat(sourcesContent).map(function(str){
-    	return btoa(unescape(encodeURIComponent( str )));
+			return btoa(unescape(encodeURIComponent( str )));
 		}).join(",")).text("Link to this");
 	}
 	function loadExample(sources, exampleJs, exampleMap) {

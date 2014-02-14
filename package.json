@@ -10,19 +10,19 @@
   "author": "Tobias Koppers @sokra",
   "license": "MIT",
   "devDependencies": {
-    "webpack": "~0.11.0",
-    "webpack-dev-server": "~0.11.0"
+    "webpack": "~1.0.x",
+    "webpack-dev-server": "~1.2.x"
   },
   "dependencies": {
     "source-map": "0.1.x",
-    "style-loader": "~0.5.0",
+    "style-loader": "~0.6.0",
     "url-loader": "~0.5.1",
-    "less-loader": "~0.5.0",
+    "less-loader": "~0.7.0",
     "css-loader": "~0.6.0",
     "jade-loader": "~0.5.0",
     "json-loader": "~0.5.0",
     "raw-loader": "~0.5.0",
-    "uglify-js": "~2.3.6",
+    "uglify-js": "~2.4.6",
     "imports-loader": "~0.6.1"
   }
 }

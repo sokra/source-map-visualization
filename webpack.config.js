@@ -1,3 +1,4 @@
+var webpack = require("webpack");
 var path = require("path");
 module.exports = {
 	entry: "./app/app.js",
@@ -18,16 +19,14 @@ module.exports = {
 			{ test: /\.png$/,  loader: "url-loader?limit=5000&minetype=image/png" }
 		]
 	},
-	provide: {
-		$: "jquery",
-		jQuery: "jquery"
-	},
+	plugins: [
+		new webpack.ProvidePlugin({
+			$: "jquery",
+			jQuery: "jquery"
+		})
+	],
 	amd: {
 		jQuery: true
 	},
-	cache: true,
-	optimize: {
-		maxChunks: 10,
-		minChunkSize: 10000
-	}
+	cache: true
 };

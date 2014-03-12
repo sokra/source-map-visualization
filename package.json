@@ -10,7 +10,7 @@
   "author": "Tobias Koppers @sokra",
   "license": "MIT",
   "devDependencies": {
-    "webpack": "~1.0.x",
+    "webpack": "~1.1.x",
     "webpack-dev-server": "~1.2.x"
   },
   "dependencies": {

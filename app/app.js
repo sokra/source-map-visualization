@@ -452,13 +452,13 @@ $(function() {
 						.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
 						.text(exampleLines.shift()));
 				}
+				if(!limited) {
+					exampleLines.forEach(function(line) {
+						original.append($("<span>").text("\n" + line));
+					});
+				}
 			}
 			endFile();
-			if(!limited) {
-				exampleLines.forEach(function(line) {
-					original.append($("<span>").text("\n" + line));
-				});
-			}
 
 			function shiftColumns(count) {
 				var nextLine = exampleLines[0];

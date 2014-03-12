@@ -4,8 +4,8 @@ var UglifyJS = require("./uglify-js");
 
 var exampleKinds = ["coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
 var LINESTYLES = 5;
-var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)/;
-var SOURCE_MAPPING_URL_REG_EXP2 = /\/*\s*[@#]\s*sourceMappingURL\s*=\s*data:.*?base64,(.*)\s*\*\//;
+var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)/;
+var SOURCE_MAPPING_URL_REG_EXP2 = /\/\*\s*[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)\s*\*\//;
 
 $(function() {
 	require("bootstrap");

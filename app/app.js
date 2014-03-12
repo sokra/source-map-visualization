@@ -24,10 +24,9 @@ $(function() {
 			$(".custom-modal").modal("hide");
 
 		if(exampleKind.indexOf("base64") === 0) {
-			var input = exampleKind.split(",").map(function(str) {
+			var input = exampleKind.split(",").slice(1).map(function(str) {
 				return decodeURIComponent(escape(atob(str)));
 			});
-			input.shift(); // === "base64"
 			var gen = input.shift();
 			var map = JSON.parse(input.shift());
 			loadExample(input, gen, map);

@@ -83,7 +83,7 @@ $(function() {
 							return $(".custom-continue").attr("disabled", false);
 						}
 						try {
-							if(_sourceMap.indexOf(XSSI_PREFIX)) {
+							if(0 === _sourceMap.indexOf(XSSI_PREFIX)) {
 								_sourceMap = _sourceMap.substr(XSSI_PREFIX.length);
 							}
 							_sourceMap = JSON.parse(_sourceMap);

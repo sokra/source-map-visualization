@@ -203,7 +203,7 @@ $(function() {
 				}
 				var sourceMapFile, generatedFile;
 				var javascriptWithSourceMap = filesData.filter(function(data) {
-					return (/\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result)) || 
+					return (/\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result)) ||
 							(/\.(css|js)$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP2.test(data.result));
 				})[0];
 				if(javascriptWithSourceMap) {

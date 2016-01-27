@@ -203,7 +203,7 @@ $(function() {
 				}
 				var sourceMapFile, generatedFile;
 				var javascriptWithSourceMap = filesData.filter(function(data) {
-					return (/\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result)) || 
+					return (/\.js$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP.test(data.result)) ||
 							(/\.(css|js)$/.test(data.name) && SOURCE_MAPPING_URL_REG_EXP2.test(data.result));
 				})[0];
 				if(javascriptWithSourceMap) {
@@ -471,10 +471,22 @@ $(function() {
 
 			$("body").delegate(".original-item, .generated-item, .mapping-item", "mouseenter", function() {
 				$(".selected").removeClass("selected");
-				var source = $(this).data("source");
-				var line = $(this).data("line");
-				var column = $(this).data("column");
-				$(".item-" + source + "-" + line + "-" + column).addClass("selected");
+				var mappedItems = $(this).data('mapped');
+				if (!mappedItems){
+					var source = $(this).data("source");
+					var line = $(this).data("line");
+					var column = $(this).data("column");
+					mappedItems = $(".item-" + source + "-" + line + "-" + column);
+					var twinItem = mappedItems.not('.mapping-item').not(this);
+					$(this).data('mapped', mappedItems)
+					$(this).data('twin', twinItem)
+				}
+				$(mappedItems).addClass("selected");
+			}).delegate(".original-item, .generated-item, .mapping-item", "click", function() {
+				var twinItem = $(this).data('twin');
+				var elem = $(twinItem).get(0)
+				if (elem && elem.scrollIntoViewIfNeeded)
+					elem.scrollIntoViewIfNeeded();
 			});
 
 			generated.append($("<br>"));

@@ -4,27 +4,33 @@
   "description": "",
   "main": "app/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server --inline --hot --devtool eval",
+    "build": "webpack -p --progress --profile",
+    "deploy": "gh-pages -d build"
   },
   "repository": "",
   "author": "Tobias Koppers @sokra",
   "license": "MIT",
   "devDependencies": {
-    "webpack": "~1.1.x",
-    "webpack-dev-server": "~1.2.x"
+    "gh-pages": "^0.8.0",
+    "html-webpack-plugin": "^2.7.2",
+    "webpack": "^1.12.12",
+    "webpack-dev-server": "^1.14.1"
   },
   "dependencies": {
-    "css-loader": "~0.6.0",
+    "css-loader": "^0.23.1",
     "file-loader": "^0.8.5",
-    "imports-loader": "~0.6.1",
-    "jade-loader": "~0.5.0",
-    "json-loader": "~0.5.0",
-    "less": "^1.7.5",
-    "less-loader": "~0.7.0",
+    "imports-loader": "^0.6.1",
+    "jade": "^1.11.0",
+    "jade-loader": "^0.8.0",
+    "json-loader": "^0.5.0",
+    "less": "^2.5.3",
+    "less-loader": "^2.2.2",
     "raw-loader": "~0.5.0",
-    "source-map": "0.1.x",
-    "style-loader": "~0.6.0",
-    "uglify-js": "~2.4.6",
-    "url-loader": "~0.5.1"
+    "source-map": "^0.5.3",
+    "style-loader": "^0.13.0",
+    "uglify-js": "^2.6.1",
+    "url-loader": "^0.5.1"
   }
 }

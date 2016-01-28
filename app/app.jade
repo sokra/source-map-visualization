@@ -4,19 +4,12 @@
 			h1 source-map-visualization
 			p
 				each kind in kinds
-					a(href="#"+kind).btn.example(data-example=kind)= kind
+					a.btn.example(href="#"+kind, data-example=kind)= kind
 					= " "
 				a(href="#custom-choose", title="You can also drag'n'drop all files into this page").btn.custom custom...
 				= " "
 				a.custom-link
-	.row
-		.span6
-			pre: code.original Original source code
-		.span6
-			pre: code.generated Generated code
-	.row
-		.span12
-			pre: code.mappings List of mappings
+pre: code.visu
 .custom-modal.modal.fade.hide
 	.modal-header
 		a.close(data-dismiss="modal") &times;

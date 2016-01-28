@@ -1,14 +1,12 @@
 var webpack = require("webpack");
 var path = require("path");
+var HtmlPlugin = require("html-webpack-plugin");
+
 module.exports = {
 	entry: "./app/app.js",
 	output: {
-		path: path.join(__dirname, "assets"),
-		publicPath: "assets/",
-		filename: "web.js",
-		sourceMapFilename: "[id].[hash].map",
-		chunkFilename: "[id].[hash].js",
-		jsonpCallback: "a"
+		path: path.join(__dirname, "build"),
+		filename: "bundle.js"
 	},
 	module: {
 		loaders: [
@@ -23,6 +21,9 @@ module.exports = {
 		new webpack.ProvidePlugin({
 			$: "jquery",
 			jQuery: "jquery"
+		}),
+		new HtmlPlugin({
+			title: "source-map-visualization"
 		})
 	],
 	amd: {

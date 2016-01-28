@@ -1,9 +1,9 @@
 require("imports?this=>window!jquery-hashchange");
 var SourceMap = require("source-map");
 var UglifyJS = require("./uglify-js");
+var generateHtml = require("./generateHtml");
 
-var exampleKinds = ["coffee", "simple-coffee", "coffee-redux", "simple-coffee-redux", "typescript"];
-var LINESTYLES = 5;
+var exampleKinds = ["coffee", "simple-coffee", "typescript", "babel"];
 var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)/;
 var SOURCE_MAPPING_URL_REG_EXP2 = /\/\*\s*[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)\s*\*\//;
 
@@ -280,192 +280,13 @@ $(function() {
 		}).join(",")).text("Link to this");
 	}
 	function loadExample(sources, exampleJs, exampleMap) {
-		var generated = $(".generated").hide().text("");
-		var original = $(".original").hide().text("");
-		var mappings = $(".mappings").hide().text("1: ");
+		var visu = $(".visu").hide().text("");
 
 		try {
 			exampleMap.file = exampleMap.file || "example.js";
 			var map = new SourceMap.SourceMapConsumer(exampleMap);
-			var mapSources = map.sources;
-
-			var generatedLine = 1;
-			var nodes = SourceMap.SourceNode.fromStringWithSourceMap(exampleJs, map).children;
-			nodes.forEach(function(item, idx) {
-				if(generatedLine > 1000) return;
-				if(typeof item === "string") {
-					generated.append($("<span>").text(item));
-					generatedLine += item.split("\n").length - 1;
-				} else {
-					var str = item.toString();
-					var source = mapSources.indexOf(item.source);
-					generated.append($("<span>")
-						.addClass("generated-item")
-						.addClass("item-" + source + "-" + item.line + "-" + item.column)
-						.attr("title", item.name)
-						.data("source", source)
-						.data("line", item.line)
-						.data("column", item.column)
-						.addClass("style-" + (item.line%LINESTYLES))
-						.text(str));
-					generatedLine += str.split("\n").length - 1;
-				}
-			});
-
-
-			var lastGenLine = 1;
-			var lastOrgSource = "";
-			map.eachMapping(function(mapping) {
-				if(mapping.generatedLine > 1000) return;
-				while(lastGenLine < mapping.generatedLine) {
-					mappings.append($("<br>"));
-					lastGenLine++;
-					mappings.append($("<span>").text(lastGenLine + ": "));
-				}
-				if(typeof mapping.originalLine == "number") {
-					if(lastOrgSource !== mapping.source && mapSources.length > 1) {
-						mappings.append($("<span>").text("[" + mapping.source + "] "));
-						lastOrgSource = mapping.source;
-					}
-					var source = mapSources.indexOf(mapping.source);
-					mappings.append(
-						$("<span>")
-							.text(mapping.generatedColumn + "->" + mapping.originalLine + ":" + mapping.originalColumn)
-							.addClass("mapping-item")
-							.addClass("item-" + source + "-" + mapping.originalLine + "-" + mapping.originalColumn)
-							.data("source", source)
-							.data("line", mapping.originalLine)
-							.data("column", mapping.originalColumn)
-							.addClass("style-" + (mapping.originalLine%LINESTYLES))
-					);
-				} else
-					mappings.append($("<span>").text(mapping.generatedColumn).addClass("mapping-item"));
-				mappings.append($("<span>").text("  "));
-			});
-
-
-			var line = 1, column = 0, currentOutputLine = 1, targetOutputLine = -1, limited = false;
-			var lastMapping = null;
-			var currentSource = null;
-			var exampleLines;
-			var mappingsBySource = {};
-			map.eachMapping(function(mapping) {
-				if(typeof mapping.originalLine !== "number") return;
-				if(mapping.generatedLine > 1000) return limited = true;
-				if(!mappingsBySource[mapping.source]) mappingsBySource[mapping.source] = [];
-				mappingsBySource[mapping.source].push(mapping);
-			}, undefined, SourceMap.SourceMapConsumer.ORIGINAL_ORDER);
-			Object.keys(mappingsBySource).map(function(source) {
-				return [source, mappingsBySource[source][0].generatedLine];
-			}).sort(function(a, b) {
-				return a[1] - b[1];
-			}).forEach(function(arr) {
-				var source = arr[0];
-				var mappings = mappingsBySource[source];
-
-				if(currentSource) endFile();
-				lastMapping = null;
-				line = 1;
-				column = 0;
-				targetOutputLine = -1;
-				if(mapSources.length > 1)
-					currentOutputLine += 2;
-				var startLine = mappings.map(function(mapping) {
-					return mapping.generatedLine - mapping.originalLine + 1;
-				}).sort(function(a, b) { return a - b });
-				startLine = startLine[0];
-				while(currentOutputLine < startLine) {
-					original.append($("<span>").text("\n"));
-					currentOutputLine++;
-				}
-				if(mapSources.length > 1)
-					original.append($("<h4>")
-						.text(source));
-				var exampleSource = sources[mapSources.indexOf(source)];
-				if(!exampleSource) throw new Error("Source '" + source + "' missing");
-				exampleLines = exampleSource.split("\n");
-				currentSource = source;
-				mappings.forEach(function(mapping, idx) {
-					if(lastMapping) {
-						var source = mapSources.indexOf(lastMapping.source);
-						if(line < mapping.originalLine) {
-							original.append($("<span>")
-								.addClass("original-item")
-								.addClass("item-" + source + "-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
-								.data("source", source)
-								.data("line", lastMapping.originalLine)
-								.data("column", lastMapping.originalColumn)
-								.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
-								.text(exampleLines.shift() + "\n"));
-							line++; column = 0;
-							currentOutputLine++;
-							while(line < mapping.originalLine) {
-								original.append($("<span>").text(exampleLines.shift() + "\n"));
-								line++; column = 0;
-								currentOutputLine++;
-							}
-							startLine = [];
-							for(var i = idx; i < mappings.length && mappings[i].originalLine <= mapping.originalLine + 1; i++) {
-								startLine.push(mappings[i].generatedLine - mappings[i].originalLine + mapping.originalLine);
-							}
-							startLine.sort(function(a, b) { return a - b });
-							startLine = startLine[0];
-							while(startLine && currentOutputLine < startLine) {
-								original.append($("<span>").text("~\n"));
-								currentOutputLine++;
-							}
-							if(column < mapping.originalColumn) {
-								original.append($("<span>").text(shiftColumns(mapping.originalColumn - column)));
-							}
-						}
-						if(mapping.originalColumn > column) {
-							original.append($("<span>")
-								.addClass("original-item")
-								.addClass("item-" + source + "-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
-								.data("source", source)
-								.data("line", lastMapping.originalLine)
-								.data("column", lastMapping.originalColumn)
-								.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
-								.text(shiftColumns(mapping.originalColumn - column)));
-						}
-					} else {
-						while(line < mapping.originalLine) {
-							original.append($("<span>").text(exampleLines.shift() + "\n"));
-							line++; column = 0;
-						}
-						if(column < mapping.originalColumn) {
-							original.append($("<span>").text(shiftColumns(mapping.originalColumn - column)));
-						}
-					}
-					lastMapping = mapping;
-				});
-			});
-			function endFile() {
-				if(lastMapping) {
-					var source = mapSources.indexOf(lastMapping.source);
-					original.append($("<span>")
-						.addClass("original-item")
-						.addClass("item-" + source + "-" + lastMapping.originalLine + "-" + lastMapping.originalColumn)
-						.data("source", source)
-						.data("line", lastMapping.originalLine)
-						.data("column", lastMapping.originalColumn)
-						.addClass("style-" + (lastMapping.originalLine%LINESTYLES))
-						.text(exampleLines.shift()));
-				}
-				if(!limited) {
-					exampleLines.forEach(function(line) {
-						original.append($("<span>").text("\n" + line));
-					});
-				}
-			}
-			endFile();
-
-			function shiftColumns(count) {
-				var nextLine = exampleLines[0];
-				exampleLines[0] = nextLine.substr(count);
-				column += count;
-				return nextLine.substr(0, count);
-			}
+			
+			visu.html(generateHtml(map, exampleJs, sources));
 
 
 
@@ -489,15 +310,18 @@ $(function() {
 					elem.scrollIntoViewIfNeeded();
 			});
 
-			generated.append($("<br>"));
-			generated.append($("<br>"));
-			generated.append($("<button>")
+			visu.append($("<br>"));
+			visu.append($("<br>"));
+			visu.append($("<button>")
 				.addClass("btn btn-primary")
 				.text("minimize")
 				.attr("title", "Minimize the file with uglify-js and combine the SourceMaps.")
 				.click(function() {
 					var result = UglifyJS.minify(exampleJs, {
 						outSourceMap: "example.map",
+						output: {
+							beautify: true
+						}
 					});
 					var minmap = JSON.parse(result.map);
 					minmap.file = "example";
@@ -508,12 +332,6 @@ $(function() {
 					minmap.applySourceMap(map, "?");
 					minmap = minmap.toJSON();
 					var idx = minmap.sources.indexOf("?");
-					if(idx >= 0) {
-						var name = "example.js";
-						while(minmap.sources.indexOf(name) >= 0)
-							name += "*";
-						minmap.sources[idx] = name;
-					}
 
 					loadExample(minmap.sourcesContent, result.code, minmap);
 					oldHash = window.location.hash = "custom";
@@ -521,9 +339,7 @@ $(function() {
 		} catch(e) {
 			throw e;
 		} finally {
-			generated.show();
-			original.show(),
-			mappings.show();
+			visu.show();
 		}
 	}
 });

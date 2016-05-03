@@ -301,14 +301,12 @@ $(function() {
 					var line = $(this).data("line");
 					var column = $(this).data("column");
 					mappedItems = $(".item-" + source + "-" + line + "-" + column);
-					var twinItem = mappedItems.not('.mapping-item').not(this);
 					$(this).data('mapped', mappedItems)
-					$(this).data('twin', twinItem)
 				}
 				$(mappedItems).addClass("selected");
 			}).delegate(".original-item, .generated-item, .mapping-item", "click", function() {
-				var twinItem = $(this).data('twin');
-				var elems = $(twinItem).get();
+				var mappedItems = $(this).data('mapped');
+				var elems = $(mappedItems).not(this).get();
 				if (elems.length) {
 					elems.forEach(function (elem) {
 						elem.scrollIntoViewIfNeeded();
@@ -316,7 +314,7 @@ $(function() {
 				}	
 			});
 
-			$('header p .btn-primary').click(function() {
+			$('header p .btn-primary').off('click').click(function() {
 				var result = UglifyJS.minify(exampleJs, {
 					outSourceMap: "example.map",
 					output: {

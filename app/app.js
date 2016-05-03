@@ -309,7 +309,9 @@ $(function() {
 				var elems = $(mappedItems).not(this).get();
 				if (elems.length) {
 					elems.forEach(function (elem) {
-						elem.scrollIntoViewIfNeeded();
+						if ('scrollIntoViewIfNeeded' in elem)
+							return elem.scrollIntoViewIfNeeded();
+						elem.scrollIntoView({behavior: 'smooth'})
 					})
 				}	
 			});

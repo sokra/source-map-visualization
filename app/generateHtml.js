@@ -241,9 +241,9 @@ module.exports = function(map, generatedCode, sources) {
 		});
 	}
 
-    var originalSideElem = "<div class='origside codeblock'><pre><code><table><tbody>";
-    var generatedSideElem = "<div class='genside codeblock'><pre><code><table><tbody>";
-    var mappingsSideElem = "<div class='genside codeblock'><pre><code><table><tbody>";
+    var originalSideElem = "<div class='origside codeblock'><h3>original</h3><pre><code><table><tbody>";
+    var generatedSideElem = "<div class='genside codeblock'><h3>compiled</h3><pre><code><table><tbody>";
+    var mappingsSideElem = "<div class='genside codeblock'><h3>mappings</h3><pre><code><table><tbody>";
 
     tableRows.forEach(function (row) {
         originalSideElem += "<tr>" + row[0] + "</tr>",
@@ -252,8 +252,8 @@ module.exports = function(map, generatedCode, sources) {
     });
 
     return {
-        files: originalSideElem + "</tbody></table></code></pre></div>" +
-                generatedSideElem + "</tbody></table></code></pre></div>",
+        files: generatedSideElem + "</tbody></table></code></pre></div>" +
+               originalSideElem + "</tbody></table></code></pre></div>",
         mappings: mappingsSideElem + "</tbody></table></code></pre></div>"
     };
             

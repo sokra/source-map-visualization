@@ -303,7 +303,16 @@ $(function() {
 					mappedItems = $(".item-" + source + "-" + line + "-" + column);
 					$(this).data('mapped', mappedItems)
 				}
-				$(mappedItems).addClass("selected");
+                $(mappedItems).addClass("selected");
+                // var elems = $(mappedItems).not(this).get();
+				// if (elems.length) {
+				// 	elems.forEach(function (elem) {
+				// 		if ('scrollIntoViewIfNeeded' in elem)
+				// 			return elem.scrollIntoViewIfNeeded();
+				// 		elem.scrollIntoView({behavior: 'smooth'})
+				// 	})
+				// }	
+
 			}).delegate(".original-item, .generated-item, .mapping-item", "click", function() {
 				var mappedItems = $(this).data('mapped');
 				var elems = $(mappedItems).not(this).get();

@@ -171,7 +171,7 @@ module.exports = function(map, generatedCode, sources) {
 					startLine.sort(function(a, b) { return a - b });
 					startLine = startLine[0];
 					while(typeof startLine !== "undefined" && currentOutputLine < startLine) {
-						addTo(originalSide, originalLine, "~");
+						// addTo(originalSide, originalLine, "~");
 						originalLine++;
 						currentOutputLine++;
 					}

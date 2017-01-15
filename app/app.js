@@ -64,6 +64,7 @@ $(function() {
 			function step2() {
 				if((SOURCE_MAPPING_URL_REG_EXP.test(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.test(generatedSource)) && typeof atob == "function") {
 					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
+					generatedSource = generatedSource.replace(SOURCE_MAPPING_URL_REG_EXP, "/* base64 source map removed */").replace(SOURCE_MAPPING_URL_REG_EXP2, "/* base64 source map removed */");
 					try {
 						sourceMap = JSON.parse(decodeURIComponent(escape(atob(match[1]))));
 						return step3();
@@ -214,6 +215,7 @@ $(function() {
 					filesData.splice(filesData.indexOf(generatedFile), 1);
 					var generatedSource = generatedFile.result;
 					var match = SOURCE_MAPPING_URL_REG_EXP.exec(generatedSource) || SOURCE_MAPPING_URL_REG_EXP2.exec(generatedSource);
+					generatedFile.result = generatedFile.result.replace(SOURCE_MAPPING_URL_REG_EXP, "/* base64 source map removed */").replace(SOURCE_MAPPING_URL_REG_EXP2, "/* base64 source map removed */");
 					sourceMapFile = {
 						result: decodeURIComponent(escape(atob(match[1])))
 					};

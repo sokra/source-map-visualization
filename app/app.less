@@ -1,3 +1,61 @@
+// flexbox mixins
+.flex-container {
+	display: flex;
+	overflow: hidden;
+
+	> * {
+	flex: 0 0 auto;
+	overflow: scroll;
+	}
+}
+
+.stretchy {
+	flex: 1 1 auto;
+}
+
+.column {
+
+	flex-direction: column;
+}
+
+html,
+body,
+.full-screen {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+}
+
+.full-screen {
+
+	.flex-container;
+	.column;
+
+	> main {
+	.stretchy;
+	.flex-container;
+		> .codeblock {
+			.stretchy;
+			width: 50%;
+		}
+	}
+}
+
+header {
+	height: 120px;
+}
+
+footer {
+	height: 200px;
+}
+
+
+header .btn-primary {
+	float: right;
+}
+
 span.original-item {
 	border-left: 1px solid black;
 	margin: 1px;
@@ -24,10 +82,6 @@ span.selected {
 }
 .style-4 {
 	background: #FFAAFF;
-}
-
-pre {
-	overflow-x: auto;
 }
 
 pre code {

@@ -282,16 +282,17 @@ $(function() {
 		}).join(",")).text("Link to this");
 	}
 	function loadExample(sources, exampleJs, exampleMap) {
-		var visu = $(".visu").hide().text("");
+		var visu = $("main").hide().text("");
+		var footer = $("footer")
 
 		try {
 			exampleMap.file = exampleMap.file || "example.js";
 			var map = new SourceMap.SourceMapConsumer(exampleMap);
+
+			var results = generateHtml(map, exampleJs, sources); 
+			visu.html(results.files);
+			footer.prepend(results.mappings);
 			
-			visu.html(generateHtml(map, exampleJs, sources));
-
-
-
 			$("body").delegate(".original-item, .generated-item, .mapping-item", "mouseenter", function() {
 				$(".selected").removeClass("selected");
 				var mappedItems = $(this).data('mapped');
@@ -300,44 +301,39 @@ $(function() {
 					var line = $(this).data("line");
 					var column = $(this).data("column");
 					mappedItems = $(".item-" + source + "-" + line + "-" + column);
-					var twinItem = mappedItems.not('.mapping-item').not(this);
 					$(this).data('mapped', mappedItems)
-					$(this).data('twin', twinItem)
 				}
 				$(mappedItems).addClass("selected");
 			}).delegate(".original-item, .generated-item, .mapping-item", "click", function() {
-				var twinItem = $(this).data('twin');
-				var elem = $(twinItem).get(0)
-				if (elem && elem.scrollIntoViewIfNeeded)
-					elem.scrollIntoViewIfNeeded();
+				var mappedItems = $(this).data('mapped');
+				var elems = $(mappedItems).not(this).get();
+				if (elems.length) {
+					elems.forEach(function (elem) {
+						elem.scrollIntoViewIfNeeded();
+					})
+				}	
 			});
 
-			visu.append($("<br>"));
-			visu.append($("<br>"));
-			visu.append($("<button>")
-				.addClass("btn btn-primary")
-				.text("minimize")
-				.attr("title", "Minimize the file with uglify-js and combine the SourceMaps.")
-				.click(function() {
-					var result = UglifyJS.minify(exampleJs, {
-						outSourceMap: "example.map",
-						output: {
-							beautify: true
-						}
-					});
-					var minmap = JSON.parse(result.map);
-					minmap.file = "example";
-					minmap = new SourceMap.SourceMapConsumer(result.map);
-					minmap = SourceMap.SourceMapGenerator.fromSourceMap(minmap);
-					minmap.setSourceContent("?", exampleJs);
-					map.sourcesContent = sources;
-					minmap.applySourceMap(map, "?");
-					minmap = minmap.toJSON();
-					var idx = minmap.sources.indexOf("?");
+			$('header p .btn-primary').off('click').click(function() {
+				var result = UglifyJS.minify(exampleJs, {
+					outSourceMap: "example.map",
+					output: {
+						beautify: true
+					}
+				});
+				var minmap = JSON.parse(result.map);
+				minmap.file = "example";
+				minmap = new SourceMap.SourceMapConsumer(result.map);
+				minmap = SourceMap.SourceMapGenerator.fromSourceMap(minmap);
+				minmap.setSourceContent("?", exampleJs);
+				map.sourcesContent = sources;
+				minmap.applySourceMap(map, "?");
+				minmap = minmap.toJSON();
+				var idx = minmap.sources.indexOf("?");
 
-					loadExample(minmap.sourcesContent, result.code, minmap);
-					oldHash = window.location.hash = "custom";
-				}));
+				loadExample(minmap.sourcesContent, result.code, minmap);
+				oldHash = window.location.hash = "custom";
+			});
 		} catch(e) {
 			throw e;
 		} finally {

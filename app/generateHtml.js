@@ -1,4 +1,5 @@
 var SourceMap = require("source-map");
+var escape = require("escape-html");
 var LINESTYLES = 5;
 var MAX_LINES = 5000;
 
@@ -34,7 +35,7 @@ module.exports = function(map, generatedCode, sources) {
 			return typeof attrs[key] !== "undefined";
 		}).map(function(key) {
 			return key + "=\"" + attrs[key] + "\"";
-		}).join(" ") + ">" + (text + "").replace(/</g, "&lt;") + "</span>";
+		}).join(" ") + ">" + text + "</span>";
 	}
 
 	var mapSources = map.sources;
@@ -138,12 +139,12 @@ module.exports = function(map, generatedCode, sources) {
 			currentOutputLine++;
 		}
 		if(mapSources.length > 1) {
-			addTo(originalSide, originalLine, "<h4>" + source.replace(/</g, "&lt;") + "</h4>");
+			addTo(originalSide, originalLine, "<h4>" + escape(source) + "</h4>");
 			originalLine++;
 		}
 		var exampleSource = sources[mapSources.indexOf(source)];
 		if(!exampleSource) throw new Error("Source '" + source + "' missing");
-		exampleLines = exampleSource.split("\n");
+		exampleLines = exampleSource.split("\n").map(escape);
 		currentSource = source;
 		mappings.forEach(function(mapping, idx) {
 			if(lastMapping) {
@@ -256,6 +257,4 @@ module.exports = function(map, generatedCode, sources) {
                originalSideElem + "</tbody></table></code></pre></div>",
         mappings: mappingsSideElem + "</tbody></table></code></pre></div>"
     };
-            
-        
 }

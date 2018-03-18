@@ -289,6 +289,7 @@ $(function() {
 			exampleMap.file = exampleMap.file || "example.js";
 			var map = new SourceMap.SourceMapConsumer(exampleMap);
 
+			visu.html(generateHtml(map, exampleJs, sources));
 			var results = generateHtml(map, exampleJs, sources);
 			visu.html(results.files);
 			footer.prepend(results.mappings);

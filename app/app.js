@@ -6,6 +6,15 @@ var generateHtml = require("./generateHtml");
 var exampleKinds = ["coffee", "simple-coffee", "typescript", "babel"];
 var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)/;
 var SOURCE_MAPPING_URL_REG_EXP2 = /\/\*\s*[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)\s*\*\//;
+var htmlEscapes = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;',
+  '/': '&#x2F;'
+};
+var htmlEscaper = /[&<>"'\/]/g;
 
 $(function() {
 	require("bootstrap");
@@ -287,6 +296,12 @@ $(function() {
 		try {
 			exampleMap.file = exampleMap.file || "example.js";
 			var map = new SourceMap.SourceMapConsumer(exampleMap);
+			
+			sources = sources.map(function (it) {
+				return it.replace(htmlEscaper, function(match) {
+				    return htmlEscapes[match];
+				 });
+			});
 			
 			visu.html(generateHtml(map, exampleJs, sources));
 

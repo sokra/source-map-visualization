@@ -124,7 +124,6 @@ module.exports = function(map, generatedCode, sources) {
 		if(b[0] === "?") return -1;
 		return a[1] - b[1];
 	}).forEach(function(arr) {
-		console.log(arr);
 		var source = arr[0];
 		var mappings = mappingsBySource[source];
 
@@ -249,7 +248,7 @@ module.exports = function(map, generatedCode, sources) {
 	}
 
     var originalSideElem = "<div class='origside codeblock'><h3>original</h3><pre><code><table><tbody>";
-    var generatedSideElem = "<div class='genside codeblock'><h3>compiled</h3><pre><code><table><tbody>";
+    var generatedSideElem = "<div class='genside codeblock'><h3>generated</h3><pre><code><table><tbody>";
     var mappingsSideElem = "<div class='genside codeblock'><h3>mappings</h3><pre><code><table><tbody>";
 
     tableRows.forEach(function (row) {

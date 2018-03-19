@@ -260,7 +260,7 @@ $(function() {
 				var providedSourcesContent = filesData.map(function(data) { return data.result; });
 				var sourcesContentSet = sourceMapFile.json.sourcesContent && sourceMapFile.json.sourcesContent.length > 0
 				if(providedSourcesContent.length > 0 && sourcesContentSet)
-					throw new Error("Provided source files and sourcesContent in SourceMap is set.");
+					throw new Error("Provided source files, but sourcesContent already provided within SourceMap.");
 				loadCustomExample(
 					sourcesContentSet ? sourceMapFile.json.sourcesContent : providedSourcesContent,
 					generatedFile.result,

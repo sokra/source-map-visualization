@@ -1,24 +1,12 @@
 var SourceMap = require("source-map");
-var escape = require("escape-html");
+var escapeHTML = require("escape-html");
 var LINESTYLES = 5;
 var MAX_LINES = 5000;
 
-// Escape < >, etc
-// https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#RULE_.231_-_HTML_Escape_Before_Inserting_Untrusted_Data_into_HTML_Element_Content
 function sanitize(text) {
-	var htmlEscapes = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#x27;',
-		'/': '&#x2F;'
-	};
-	var htmlEscaper = /[&<>"'\/]/g;
-
-	return text.replace(htmlEscaper, function(match) {
-			return htmlEscapes[match];
-	});
+	// Escape any <>'"\ during HTML serialization
+	// https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#RULE_.231_-_HTML_Escape_Before_Inserting_Untrusted_Data_into_HTML_Element_Content
+	return escapeHTML(text);
 }
 
 module.exports = function(map, generatedCode, sources) {
@@ -31,9 +19,6 @@ module.exports = function(map, generatedCode, sources) {
 	}
 
 	function span(text, options) {
-
-		text = sanitize(text);
-
 		var attrs = {};
 		if(options) {
 			if(options.generated) {
@@ -56,7 +41,7 @@ module.exports = function(map, generatedCode, sources) {
 			return typeof attrs[key] !== "undefined";
 		}).map(function(key) {
 			return key + "=\"" + attrs[key] + "\"";
-		}).join(" ") + ">" + text + "</span>";
+		}).join(" ") + ">" + sanitize(text) + "</span>";
 	}
 
 	var mapSources = map.sources;
@@ -165,7 +150,7 @@ module.exports = function(map, generatedCode, sources) {
 		}
 		var exampleSource = sources[mapSources.indexOf(source)];
 		if(!exampleSource) throw new Error("Source '" + source + "' missing");
-		exampleLines = exampleSource.split("\n").map(escape);
+		exampleLines = exampleSource.split("\n");
 		currentSource = source;
 		mappings.forEach(function(mapping, idx) {
 			if(lastMapping) {

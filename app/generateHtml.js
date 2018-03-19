@@ -1,6 +1,13 @@
 var SourceMap = require("source-map");
+var escapeHTML = require("escape-html");
 var LINESTYLES = 5;
 var MAX_LINES = 5000;
+
+function sanitize(text) {
+	// Escape any <>'"\ during HTML serialization
+	// https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#RULE_.231_-_HTML_Escape_Before_Inserting_Untrusted_Data_into_HTML_Element_Content
+	return escapeHTML(text);
+}
 
 module.exports = function(map, generatedCode, sources) {
 	var generatedSide = [];
@@ -34,7 +41,7 @@ module.exports = function(map, generatedCode, sources) {
 			return typeof attrs[key] !== "undefined";
 		}).map(function(key) {
 			return key + "=\"" + attrs[key] + "\"";
-		}).join(" ") + ">" + (text + "").replace(/</g, "&lt;") + "</span>";
+		}).join(" ") + ">" + sanitize(text) + "</span>";
 	}
 
 	var mapSources = map.sources;
@@ -45,7 +52,7 @@ module.exports = function(map, generatedCode, sources) {
 		if(generatedLine > MAX_LINES) return;
 		if(typeof item === "string") {
 			item.split("\n").forEach(function(line) {
-				addTo(generatedSide, generatedLine, line);
+				addTo(generatedSide, generatedLine, sanitize(line));
 				generatedLine++;
 			});
 			generatedLine--;
@@ -75,7 +82,7 @@ module.exports = function(map, generatedCode, sources) {
 		while(lastGenLine < mapping.generatedLine) {
 			mappingsLine++;
 			lastGenLine++;
-			addTo(mappingsSide, mappingsLine, lastGenLine + ": ");
+			addTo(mappingsSide, mappingsLine, sanitize(lastGenLine + ": "));
 		}
 		if(typeof mapping.originalLine == "number") {
 			if(lastOrgSource !== mapping.source && mapSources.length > 1) {
@@ -138,7 +145,7 @@ module.exports = function(map, generatedCode, sources) {
 			currentOutputLine++;
 		}
 		if(mapSources.length > 1) {
-			addTo(originalSide, originalLine, "<h4>" + source.replace(/</g, "&lt;") + "</h4>");
+			addTo(originalSide, originalLine, "<h4>" + sanitize(source) + "</h4>");
 			originalLine++;
 		}
 		var exampleSource = sources[mapSources.indexOf(source)];
@@ -159,7 +166,7 @@ module.exports = function(map, generatedCode, sources) {
 					line++; column = 0;
 					currentOutputLine++;
 					while(line < mapping.originalLine) {
-						addTo(originalSide, originalLine, exampleLines.shift());
+						addTo(originalSide, originalLine, sanitize(exampleLines.shift()));
 						originalLine++;
 						line++; column = 0;
 						currentOutputLine++;
@@ -176,7 +183,7 @@ module.exports = function(map, generatedCode, sources) {
 						currentOutputLine++;
 					}
 					if(column < mapping.originalColumn) {
-						addTo(originalSide, originalLine, shiftColumns(mapping.originalColumn - column));
+						addTo(originalSide, originalLine, sanitize(shiftColumns(mapping.originalColumn - column)));
 					}
 				}
 				if(mapping.originalColumn > column) {
@@ -189,12 +196,12 @@ module.exports = function(map, generatedCode, sources) {
 				}
 			} else {
 				while(line < mapping.originalLine) {
-					addTo(originalSide, originalLine, exampleLines.shift());
+					addTo(originalSide, originalLine, sanitize(exampleLines.shift()));
 					originalLine++;
 					line++; column = 0;
 				}
 				if(column < mapping.originalColumn) {
-					addTo(originalSide, originalLine, shiftColumns(mapping.originalColumn - column));
+					addTo(originalSide, originalLine, sanitize(shiftColumns(mapping.originalColumn - column)));
 				}
 			}
 			lastMapping = mapping;
@@ -214,7 +221,7 @@ module.exports = function(map, generatedCode, sources) {
 			exampleLines.forEach(function(line) {
 				originalLine++;
 				currentOutputLine++;
-				addTo(originalSide, originalLine, line);
+				addTo(originalSide, originalLine, sanitize(line));
 			});
 		}
 	}
@@ -256,6 +263,4 @@ module.exports = function(map, generatedCode, sources) {
                originalSideElem + "</tbody></table></code></pre></div>",
         mappings: mappingsSideElem + "</tbody></table></code></pre></div>"
     };
-            
-        
 }

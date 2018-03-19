@@ -317,7 +317,7 @@ $(function() {
 				}
 			});
 
-			$('header p .btn-primary').off('click').click(function() {
+			$('header p .js-minify').off('click').click(function() {
 				var result = UglifyJS.minify(exampleJs, {
 					outSourceMap: "example.map",
 					output: {

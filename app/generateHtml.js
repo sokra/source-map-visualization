@@ -145,7 +145,7 @@ module.exports = function(map, generatedCode, sources) {
 			currentOutputLine++;
 		}
 		if(mapSources.length > 1) {
-			addTo(originalSide, originalLine, "<h4>" + sanitize(source) + "</h4>");
+			addTo(originalSide, originalLine, "<h4 class='alert alert-info'>" + sanitize(source) + "</h4>");
 			originalLine++;
 		}
 		var exampleSource = sources[mapSources.indexOf(source)];

@@ -5,12 +5,12 @@
 			each kind in kinds
 				a.btn.example(href="#"+kind, data-example=kind)= kind
 				= " "
-			a(href="#custom-choose", title="You can also drag'n'drop all files into this page").btn.custom custom...
+			a(href="#custom-choose", title="You can also drag'n'drop all files into this page").btn-primary.btn.custom custom...
 			= " "
 			a.custom-link
-			button(title="Minimize the file with uglify-js and combine the SourceMaps.").btn.btn-primary minimize
+			button(title="Minify the compiled JS with uglify-js and combine the SourceMaps.").btn.btn-info.js-minify minify compiled
 		small
-			made with ♡ by sokra & paulirish. &nbsp;
+			span made with ♡ by sokra & paulirish. &nbsp;
 			a(href="https://github.com/sokra/source-map-visualization/") repo
 	main
 	footer

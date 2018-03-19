@@ -291,7 +291,7 @@ $(function() {
 
 			var results = generateHtml(map, exampleJs, sources);
 			visu.html(results.files);
-			footer.prepend(results.mappings);
+			footer.html(results.mappings);
 
 			$("body").delegate(".original-item, .generated-item, .mapping-item", "mouseenter", function() {
 				$(".selected").removeClass("selected");

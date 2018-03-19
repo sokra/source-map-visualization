@@ -1,3 +1,77 @@
+.scrollbar-style {
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: hsla(0, 0%, 56%, 0.6);
+    }
+    &:hover::-webkit-scrollbar-thumb {
+        background-color: hsla(0, 0%, 25%, 0.6);
+    }
+}
+
+// flexbox mixins
+.flex-container {
+	display: flex;
+	overflow: hidden;
+
+	> * {
+	flex: 0 0 auto;
+	overflow: scroll;
+    .scrollbar-style;
+	}
+}
+
+.stretchy {
+	flex: 1 1 auto;
+}
+
+.column {
+
+	flex-direction: column;
+}
+
+html,
+body,
+.full-screen {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+}
+
+.full-screen {
+
+	.flex-container;
+	.column;
+
+	> main {
+	.stretchy;
+	.flex-container;
+		> .codeblock {
+			.stretchy;
+			width: 50%;
+		}
+        > *:first-child {
+            margin-right: 5px;
+        }
+	}
+}
+
+header {
+	height: 120px;
+}
+
+footer {
+	height: 200px;
+}
+
+
+header .btn-primary {
+	float: right;
+}
+
 span.original-item {
 	border-left: 1px solid black;
 	margin: 1px;
@@ -27,14 +101,26 @@ span.selected {
 }
 
 pre {
-	overflow-x: auto;
+    border-radius: 0;
 }
-
 pre code {
 	white-space: pre-wrap;
 	word-break: normal;
 	word-wrap: normal;
 }
+
+main, footer {
+    h3 {
+        font-size: 16px;
+        line-height: 1;
+        margin: 0;
+        padding: 2px 6px;
+        color: rgb(255, 255, 255);
+        font-weight: normal;
+        background: rgba(0, 0, 0, 0.15);
+    }
+}
+
 
 table {
 	width: 100%;

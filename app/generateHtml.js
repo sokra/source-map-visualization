@@ -221,7 +221,7 @@ module.exports = function(map, generatedCode, sources) {
 	endFile();
 
 	function shiftColumns(count) {
-		var nextLine = exampleLines[0];
+        var nextLine = exampleLines[0];
 		exampleLines[0] = nextLine.substr(count);
 		column += count;
 		return nextLine.substr(0, count);
@@ -231,19 +231,31 @@ module.exports = function(map, generatedCode, sources) {
 
 	var tableRows = [];
 
-	for(var i = 0; i < length; i++) {
+	for (var i = 0; i < length; i++) {
 		tableRows[i] = [
 			originalSide[i] || "",
 			generatedSide[i] || "",
 			mappingsSide[i] || ""
 		].map(function(cell) {
 			return "<td>" + cell + "</td>";
-		}).join("");
+		});
 	}
 
-	return "<table><tbody>" + tableRows.map(function(row) {
-		return "<tr>" + row + "</tr>";
-	}).join("") + "</tbody></table>";
+    var originalSideElem = "<div class='origside codeblock'><h3>original</h3><pre><code><table><tbody>";
+    var generatedSideElem = "<div class='genside codeblock'><h3>compiled</h3><pre><code><table><tbody>";
+    var mappingsSideElem = "<div class='genside codeblock'><h3>mappings</h3><pre><code><table><tbody>";
 
+    tableRows.forEach(function (row) {
+        originalSideElem += "<tr>" + row[0] + "</tr>",
+        generatedSideElem += "<tr>" + row[1] + "</tr>",
+        mappingsSideElem += "<tr>" + row[2] + "</tr>"
+    });
 
+    return {
+        files: generatedSideElem + "</tbody></table></code></pre></div>" +
+               originalSideElem + "</tbody></table></code></pre></div>",
+        mappings: mappingsSideElem + "</tbody></table></code></pre></div>"
+    };
+            
+        
 }

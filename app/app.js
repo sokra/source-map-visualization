@@ -3,7 +3,7 @@ var SourceMap = require("source-map");
 var UglifyJS = require("./uglify-js");
 var generateHtml = require("./generateHtml");
 
-var exampleKinds = ["coffee", "simple-coffee", "typescript", "babel"];
+var exampleKinds = ["coffee", "simple-coffee", "typescript", "babel", "sass"];
 var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)/;
 var SOURCE_MAPPING_URL_REG_EXP2 = /\/\*\s*[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)\s*\*\//;
 

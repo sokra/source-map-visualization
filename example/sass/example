@@ -1,0 +1,374 @@
+$white: #fff;
+$color_tundora: #444;
+$color_primary_brand: #301e80;
+
+@mixin flex-base {
+  display: flex;
+  justify-content: flex-start;
+  align-items: stretch;
+  flex: 1;
+}
+
+@mixin horizontal-container {
+  flex-direction: row;
+  flex-flow: row wrap;
+  @include flex-base;
+}
+
+@mixin vertical-container {
+  flex-direction: column;
+  @include flex-base;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Helvetica', 'Verdana', sans-serif;
+  font-weight: 400;
+  // Not implemented yet but is a nice solution for async loading fonts
+  font-display: optional;
+  color: $color_tundora;
+}
+
+html {
+  overflow: hidden;
+}
+
+body {
+  @include vertical-container;
+  flex-wrap: nowrap;
+  background: #ececec;
+}
+
+.header {
+  width: 100%;
+  min-height: 56px;
+  color: $white;
+  background: $color_primary_brand;
+  position: fixed;
+  font-size: 20px;
+  padding: 16px 16px 0 16px;
+  will-change: transform;
+  @include horizontal-container;
+  transition: transform 0.233s cubic-bezier(0,0,0.21,1) 0.1s;
+  z-index: 1000;
+
+  .headerButton {
+    width: 24px;
+    height: 24px;
+    margin-right: 16px;
+    text-indent: -30000px;
+    overflow: hidden;
+    opacity: 0.54;
+    transition: opacity 0.333s cubic-bezier(0,0,0.21,1);
+    border: none;
+    outline: none;
+    cursor: pointer;
+  }
+  .butRefresh {
+    background: url(/images/ic_refresh_white_24px.svg) center center no-repeat;
+  }
+  .butAdd {
+    background: url(/images/ic_add_white_24px.svg) center center no-repeat;
+  }
+}
+
+.header__title {
+  font-weight: 400;
+  font-size: 20px;
+  margin: 0;
+  flex: 1;
+}
+
+.loader {
+  left: 50%;
+  top: 50%;
+  position: fixed;
+  transform: translate(-50%, -50%);
+
+  .spinner {
+    box-sizing: border-box;
+    stroke: #673AB7;
+    stroke-width: 3px;
+    transform-origin: 50%;
+
+    animation: line 1.6s cubic-bezier(0.4, 0.0, 0.2, 1) infinite,
+      rotate 1.6s linear infinite;
+  }
+
+  @keyframes rotate {
+
+    from {
+      transform: rotate(0)
+    }
+
+    to {
+      transform: rotate(450deg);
+    }
+  }
+
+  @keyframes line {
+    0% {
+      stroke-dasharray: 2, 85.964;
+      transform: rotate(0);
+    }
+
+    50% {
+      stroke-dasharray: 65.973, 21.9911;
+      stroke-dashoffset: 0;
+    }
+
+    100% {
+      stroke-dasharray: 2, 85.964;
+      stroke-dashoffset: -65.973;
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.main {
+  padding-top: 60px;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dialog-container {
+  background: rgba(0,0,0,0.57);
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+  transition: opacity 0.333s cubic-bezier(0,0,0.21,1);
+}
+
+.dialog-container--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dialog {
+  background: #FFF;
+  border-radius: 2px;
+  box-shadow: 0 0 14px rgba(0,0,0,.24),
+              0 14px 28px rgba(0,0,0,.48);
+  min-width: 280px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) translateY(30px);
+  transition: transform 0.333s cubic-bezier(0,0,0.21,1) 0.05s;
+  padding: 24px;
+  font-size: 30px;
+
+  select, button {
+    font-size: 20px;
+  }
+}
+
+@mixin classy-border($color, $width) {
+  border-color: $color;
+  border-width: $width;
+  border-style: solid;
+}
+
+.card {
+  padding: 16px;
+  position: relative;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 2px;
+  margin: 16px;
+  box-shadow: 0 3px 1px 1px rgba(0, 0, 0, 0.2);
+  @include classy-border(#eee, 1px);
+}
+
+/* TODO: use variable for smaller icon, too. */
+$iconsize: 96px;
+
+.weather-forecast {
+  .current .icon {
+    width: $iconsize;
+    height: $iconsize;
+  }
+  .future .icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .current {
+    display: flex;
+    .visual {
+      display: flex;
+      font-size: 2em;
+      .scale {
+        font-size: 0.5em;
+        vertical-align: super;
+      }
+    }
+
+    .visual, .description {
+      flex-grow: 1;
+    }
+
+    $my-color: #888;
+    .feels-like:before {
+      content: "Feels like: ";
+      color: $my-color;
+    }
+
+    .wind:before {
+      content: "Wind: ";
+      color: $my-color;
+    }
+
+    .precip:before {
+      content: "Precipitation: ";
+      color: $my-color;
+    }
+
+    .humidity:before {
+      content: "Humidity: ";
+      color: $my-color;
+    }
+
+    .pollen:before {
+      content: "Pollen Count: ";
+      color: $my-color;
+    }
+
+    .pcount:before {
+      content: "Pollen ";
+      color: $my-color;
+    }
+  }
+
+  .location {
+    font-size: 1.35em;
+  }
+  .date, .description {
+    font-size: 0.7em;
+  }
+
+
+  .future {
+    display: flex;
+
+    .oneday {
+      flex-grow: 1;
+      text-align: center;
+
+      .icon {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .temp-high, .temp-low {
+        display: inline-block;
+      }
+
+      .temp-low {
+        color: #888;
+      }
+    }
+  }
+
+  .icon {
+    background-repeat: no-repeat;
+    background-size: contain;
+    &.clear-day { background-image: url('/images/clear.png'); }
+    &.clear-night { background-image: url('/images/clear.png'); }
+    &.rain { background-image: url('/images/rain.png'); }
+    &.snow { background-image: url('/images/snow.png'); }
+    &.sleet { background-image: url('/images/sleet.png'); }
+    &.wind { background-image: url('/images/wind.png'); }
+    &.fog { background-image: url('/images/fog.png'); }
+    &.cloudy { background-image: url('/images/cloudy.png'); }
+    &.partly-cloudy-day { background-image: url('/images/partly-cloudy.png'); }
+    &.partly-cloudy-night { background-image: url('/images/partly-cloudy.png'); }
+    &.thunderstorms { background-image: url('/images/thunderstorms.png'); }
+  }
+}
+
+@media (min-width: 360px) {
+  .weather-forecast {
+    .location {
+      font-size: 2.25em;
+    }
+    .date, .description {
+      font-size: 0.9em;
+    }
+    .current {
+      .visual {
+        font-size: 3em;
+      }
+    }
+  }
+}
+
+@media (min-width: 500px) {
+  .weather-forecast {
+    .date, .description {
+      font-size: 1.25em;
+    }
+    .location {
+      font-size: 2.45em;
+    }
+    .current {
+      .icon {
+        width: 128px;
+        height: 128px;
+      }
+      .visual {
+        font-size: 4em;
+      }
+    }
+    .future {
+      .oneday {
+        .icon {
+          width: 64px;
+          height: 64px;
+        }
+      }
+    }
+  }
+}
+
+@media (min-width: 1015px) {
+  .main {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+
+  .card {
+    flex: 1 1 auto;
+    max-width: calc(50% - 32px);
+  }
+}
+
+
+
+footer {
+  width: 100%;
+  height: 26px;
+  background: $color_primary_brand;
+  position: fixed;
+  font-size: 20px;
+  bottom: 0;
+  will-change: transform;
+  transition: transform 0.233s cubic-bezier(0,0,0.21,1) 0.1s;
+  z-index: 1000;
+}

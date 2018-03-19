@@ -29,5 +29,6 @@ module.exports = {
 	amd: {
 		jQuery: true
 	},
-	cache: true
+	cache: true,
+	devtool: "source-map"
 };

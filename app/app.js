@@ -6,6 +6,7 @@ var generateHtml = require("./generateHtml");
 var exampleKinds = ["coffee", "simple-coffee", "typescript", "babel", "sass"];
 var SOURCE_MAPPING_URL_REG_EXP = /\/\/[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)/;
 var SOURCE_MAPPING_URL_REG_EXP2 = /\/\*\s*[@#]\s*sourceMappingURL\s*=\s*data:[^\n]*?base64,([^\n]*)\s*\*\//;
+var XSSI_PREFIX = '])}';
 
 $(function() {
 	require("bootstrap");
@@ -83,6 +84,9 @@ $(function() {
 							return $(".custom-continue").attr("disabled", false);
 						}
 						try {
+							if(0 === _sourceMap.indexOf(XSSI_PREFIX)) {
+								_sourceMap = _sourceMap.substr(XSSI_PREFIX.length);
+							}
 							_sourceMap = JSON.parse(_sourceMap);
 							if(!_sourceMap.sources) throw new Error("SourceMap has no sources field");
 							if(!_sourceMap.mappings) throw new Error("SourceMap has no mappings field");

@@ -227,7 +227,7 @@ module.exports = function(map, generatedCode, sources) {
 	endFile();
 
 	function shiftColumns(count) {
-        var nextLine = exampleLines[0];
+        var nextLine = exampleLines[0] || '';
 		exampleLines[0] = nextLine.substr(count);
 		column += count;
 		return nextLine.substr(0, count);
